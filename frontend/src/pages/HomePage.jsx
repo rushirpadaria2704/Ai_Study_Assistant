@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import client from '../api/client';
 
 export default function HomePage() {
   const [stats, setStats] = useState(null);
@@ -13,7 +13,7 @@ export default function HomePage() {
 
   const fetchHomeData = async () => {
     try {
-      const res = await axios.get('/api/index');
+      const res = await client.get('/index');
       if (res.data.ok) {
         setStats(res.data.stats || {});
         setDocuments(res.data.recent_documents || []);
@@ -36,7 +36,7 @@ export default function HomePage() {
                 <i className="bi bi-cpu-fill me-1"></i> RAG &amp; AI POWERED STUDY SUITE
               </span>
               <h1 className="display-5 fw-bold text-body font-monospace mb-3">
-                Master Your Coursework with Offline AI
+                Master Your Coursework with AI
               </h1>
               <p className="text-muted fs-6 lh-relaxed mb-4">
                 Upload notes, textbooks, and slides. Extract intelligent summaries, challenge yourself with RAG-generated quizzes, practice oral viva voce, and run timed online MCQ exams.

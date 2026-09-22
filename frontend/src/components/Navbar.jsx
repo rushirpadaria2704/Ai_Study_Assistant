@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import client from '../api/client';
 
 export default function Navbar() {
   const location = useLocation();
@@ -12,7 +12,7 @@ export default function Navbar() {
 
   const fetchModelStatus = async () => {
     try {
-      const res = await axios.get('/api/settings');
+      const res = await client.get('/settings');
       if (res.data.ok) {
         const active = res.data.active_provider;
         if (active) {
@@ -78,7 +78,7 @@ export default function Navbar() {
             </li>
             <li className="nav-item">
               <Link className={`nav-link px-3 ${isActive('/online-test') ? 'active fw-bold text-success' : ''}`} to="/online-test">
-                <i className="bi bi-[#10b981] bi-card-checklist me-1"></i> Online MCQ Tests
+                <i className="bi bi-card-checklist me-1"></i> Online MCQ Tests
               </Link>
             </li>
             <li className="nav-item">
