@@ -1,17 +1,11 @@
 FROM python:3.10-slim
 
-# Install system utilities & curl for Ollama
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     git \
     libgomp1 \
-    zstd \
-    procps \
     && rm -rf /var/lib/apt/lists/*
-
-
-# Install Ollama binary
-RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Set working directory
 WORKDIR /app
