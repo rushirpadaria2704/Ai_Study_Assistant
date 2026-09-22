@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+{% block title %}Online Exam - {{ attempt.topic }}{% endblock %}
+
+{% block content %}
+<!-- Custom Glass & Grid Styling -->
+<style>
+    .nav-grid-btn {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-family: monospace;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    .nav-grid-btn.current {
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.4);
+    }
+    .option-card {
+        border: 1.5px solid rgba(0,0,0,0.1);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+    .option-card:hover {
+        border-color: rgba(13, 110, 253, 0.5);
+        background: rgba(13, 110, 253, 0.03);
+    }
+    .option-card.selected {
+        border-color: #0d6efd !important;
+        background: rgba(13, 110, 253, 0.08) !important;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Top Examination Header -->
+    <div class="card workbench-card rounded-4 border-0 shadow-sm mb-4">
+        <div class="card-body p-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <span class="badge bg-primary bg-opacity-10 text-primary font-monospace extra-small mb-1">
+                    <i class="bi bi-cpu-fill me-1"></i> AI STUDY ASSISTANT • ONLINE MCQ TEST
+                </span>
+                <h1 class="h5 fw-bold text-body font-monospace mb-0">Topic: {{ attempt.topic }}</h1>
+            </div>
+
+            <div class="d-flex align-items-center gap-4">
+                <!-- Question Progress Badge -->
+                <div class="text-center">
+                    <div class="extra-small text-muted font-monospace">PROGRESS</div>
+                    <div class="fw-bold font-monospace text-body" id="headerProgressDisplay">
+                        Question <span id="currentQNumText">1</span> of {{ attempt.total_questions }}
+                    </div>
+                </div>
+
+                <!-- Per-Question / Total Timer -->
+                <div class="timer-card p-2 px-3 rounded-3 bg-body border border-secondary border-opacity-25 d-flex align-items-center gap-2 shadow-sm">
+                    <i class="bi bi-stopwatch-fill fs-4 text-primary" id="timerIcon"></i>
+                    <div>
+                        <div class="extra-small text-muted font-monospace" id="timerLabel">TIME REMAINING</div>
+                        <div class="fw-bold font-monospace fs-5 text-primary" id="timerCountdown">00:30</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Exam Body Row -->
+    <div class="row g-4">
+        <!-- Question Column -->
+        <div class="col-lg-8">
+            <div class="card workbench-card rounded-4 border-0 shadow-sm p-4 mb-3" id="questionCardWrapper">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary font-monospace extra-small" id="qDiffBadge">
+                        DIFFICULTY: MEDIUM
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-warning font-monospace extra-small px-3 rounded-pill d-inline-flex align-items-center gap-1" id="markReviewBtn" onclick="toggleMarkForReview()">
+                        <i class="bi bi-bookmark-star"></i> <span id="markReviewText">Mark for Review</span>
+                    </button>
+                </div>
+
+                <h2 class="h5 fw-bold text-body mb-4 lh-base font-sans" id="questionTextDisplay">
+                    Loading Question...
+                </h2>
+
+                <!-- 4 Radio Option Cards -->
+                <div class="d-flex flex-column gap-3 mb-4" id="optionsContainer">
+                    <!-- Option cards injected dynamically via JS -->
+                </div>
+
+                <!-- Navigation Action Buttons -->
+                <div class="d-flex align-items-center justify-content-between border-top pt-3">
+                    <button type="button" class="btn btn-outline-secondary font-monospace extra-small px-4 rounded-3 fw-semibold" id="prevQBtn" onclick="navigatePrev()">
+                        <i class="bi bi-arrow-left me-1"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-primary font-monospace extra-small px-4 rounded-3 fw-semibold" id="nextQBtn" onclick="navigateNext()">
+                        Next <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question Navigation Grid Column -->
+        <div class="col-lg-4">
+            <div class="card workbench-card rounded-4 border-0 shadow-sm p-4 mb-4">
+                <h3 class="h6 fw-bold text-body font-monospace mb-3 pb-2 border-bottom">
+                    <i class="bi bi-grid-3x3-gap-fill me-1 text-primary"></i> Question Navigation
+                </h3>
+
+                <!-- Grid Buttons [1] to [15] -->
+                <div class="d-flex flex-wrap gap-2 mb-4 justify-content-start" id="navGridContainer">
+                    <!-- Nav grid items injected via JS -->
+                </div>
+
+                <!-- Legend -->
+                <div class="p-3 rounded-3 bg-body-tertiary extra-small font-monospace text-secondary border">
+                    <div class="fw-bold mb-2 text-body">STATUS_LEGEND</div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-success px-2 py-1">Answered</span>
+                        <span>Option selected</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-secondary bg-opacity-25 text-body px-2 py-1">Unanswered</span>
+                        <span>Not attempted</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-warning text-dark px-2 py-1">Review</span>
+                        <span>Marked for review</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary px-2 py-1">Current</span>
+                        <span>Active question</span>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <button type="button" class="btn btn-success w-100 py-2.5 font-monospace extra-small fw-bold rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" onclick="openSubmitModal()">
+                    <i class="bi bi-check-circle-fill fs-5"></i>
+                    <span>SUBMIT_TEST_NOW</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Submit Confirmation Modal -->
+<div class="modal fade" id="submitConfirmModal" tabindex="-1" aria-labelledby="submitConfirmModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-warning bg-opacity-10 py-3 px-4 border-bottom">
+                <h5 class="modal-title fw-bold text-body font-monospace d-flex align-items-center gap-2" id="submitConfirmModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-warning"></i> Confirm Exam Submission
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <h6 class="fw-bold font-monospace text-body mb-3">Are you sure you want to submit?</h6>
+                <div class="p-3 rounded-3 bg-body-tertiary border mb-4 font-monospace extra-small">
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <div class="text-secondary">TOTAL</div>
+                            <div class="fw-bold fs-5 text-body" id="modalTotalQ">15</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-success">ANSWERED</div>
+                            <div class="fw-bold fs-5 text-success" id="modalAnsweredQ">12</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-danger">UNANSWERED</div>
+                            <div class="fw-bold fs-5 text-danger" id="modalUnansweredQ">3</div>
+                        </div>
+                    </div>
+                </div>
+                <p class="extra-small text-muted font-monospace mb-0">Once submitted, answers cannot be modified.</p>
+            </div>
+            <div class="modal-footer bg-transparent py-3 px-4 border-top d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary font-monospace extra-small px-3 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success font-monospace extra-small px-4 rounded-3 fw-bold" id="confirmSubmitBtn" onclick="executeFinalSubmit()">
+                    <i class="bi bi-check-circle-fill me-1"></i> Submit Test
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Exam Payload from Flask
+const attemptPayload = {{ attempt|tojson|safe }};
+const questions = attemptPayload.questions;
+const totalQuestions = attemptPayload.total_questions;
+const timePerQuestionSec = attemptPayload.time_per_question;
+const attemptId = attemptPayload.attempt_id;
+
+let currentIndex = 0;
+let userAnswers = {};
+let markedForReview = {};
+let perQuestionTimer = timePerQuestionSec;
+let questionInterval = null;
+
+// Initialize Exam State
+document.addEventListener('DOMContentLoaded', function() {
+    questions.forEach((q, i) => {
+        if (q.selected_option) {
+            userAnswers[i] = q.selected_option;
+        }
+        if (q.is_marked_for_review) {
+            markedForReview[i] = true;
+        }
+    });
+
+    renderQuestion(0);
+    renderNavGrid();
+});
+
+function renderQuestion(index) {
+    if (index < 0 || index >= totalQuestions) return;
+    currentIndex = index;
+
+    const q = questions[index];
+    document.getElementById('currentQNumText').textContent = index + 1;
+    document.getElementById('questionTextDisplay').textContent = q.question_text;
+    document.getElementById('qDiffBadge').textContent = `DIFFICULTY: ${(q.difficulty || 'medium').toUpperCase()}`;
+
+    // Update Mark for Review Button
+    const markBtn = document.getElementById('markReviewBtn');
+    const markText = document.getElementById('markReviewText');
+    if (markedForReview[index]) {
+        markBtn.className = 'btn btn-sm btn-warning text-dark font-monospace extra-small px-3 rounded-pill d-inline-flex align-items-center gap-1';
+        markText.textContent = 'Marked for Review';
+    } else {
+        markBtn.className = 'btn btn-sm btn-outline-warning font-monospace extra-small px-3 rounded-pill d-inline-flex align-items-center gap-1';
+        markText.textContent = 'Mark for Review';
+    }
+
+    // Render Options
+    const container = document.getElementById('optionsContainer');
+    container.innerHTML = '';
+
+    const letters = ['A', 'B', 'C', 'D'];
+    q.options.forEach((optText, optIdx) => {
+        const optionLetter = letters[optIdx] || String.fromCharCode(65 + optIdx);
+        const isSelected = userAnswers[index] === optText;
+
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-3 option-card d-flex align-items-center gap-3 ${isSelected ? 'selected' : 'bg-body'}`;
+        card.onclick = () => selectAnswer(optText);
+
+        card.innerHTML = `
+            <input type="radio" name="exam_option" class="form-check-input flex-shrink-0" ${isSelected ? 'checked' : ''}>
+            <span class="badge ${isSelected ? 'bg-primary' : 'bg-secondary bg-opacity-25 text-body'} font-monospace px-2.5 py-1.5">${optionLetter}</span>
+            <span class="text-body font-sans extra-small fw-medium">${escapeHtml(optText)}</span>
+        `;
+        container.appendChild(card);
+    });
+
+    // Update Prev / Next buttons
+    document.getElementById('prevQBtn').disabled = (index === 0);
+    const nextBtn = document.getElementById('nextQBtn');
+    if (index === totalQuestions - 1) {
+        nextBtn.innerHTML = 'Review & Submit <i class="bi bi-check-circle ms-1"></i>';
+        nextBtn.onclick = openSubmitModal;
+    } else {
+        nextBtn.innerHTML = 'Next <i class="bi bi-arrow-right ms-1"></i>';
+        nextBtn.onclick = navigateNext;
+    }
+
+    renderNavGrid();
+    startPerQuestionTimer();
+}
+
+function selectAnswer(optText) {
+    userAnswers[currentIndex] = optText;
+    renderQuestion(currentIndex);
+    syncAnswerToBackend(currentIndex, optText);
+}
+
+function toggleMarkForReview() {
+    markedForReview[currentIndex] = !markedForReview[currentIndex];
+    renderQuestion(currentIndex);
+    syncAnswerToBackend(currentIndex, userAnswers[currentIndex] || null);
+}
+
+function syncAnswerToBackend(index, selectedOpt) {
+    const q = questions[index];
+    if (!q) return;
+
+    fetch(`/api/online-test/attempt/${attemptId}/answer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            question_id: q.id,
+            selected_option: selectedOpt,
+            is_marked_for_review: !!markedForReview[index],
+            time_taken: timePerQuestionSec - perQuestionTimer
+        })
+    }).catch(err => console.error("Sync error:", err));
+}
+
+function startPerQuestionTimer() {
+    clearInterval(questionInterval);
+    perQuestionTimer = timePerQuestionSec;
+    updateTimerUI();
+
+    questionInterval = setInterval(() => {
+        perQuestionTimer--;
+        updateTimerUI();
+        if (perQuestionTimer <= 0) {
+            clearInterval(questionInterval);
+            // Auto advance
+            if (currentIndex < totalQuestions - 1) {
+                navigateNext();
+            } else {
+                executeFinalSubmit();
+            }
+        }
+    }, 1000);
+}
+
+function updateTimerUI() {
+    const disp = document.getElementById('timerCountdown');
+    const mins = Math.floor(perQuestionTimer / 60);
+    const secs = perQuestionTimer % 60;
+    disp.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+
+    if (perQuestionTimer <= 5) {
+        disp.className = 'fw-bold font-monospace fs-5 text-danger animate-pulse';
+    } else {
+        disp.className = 'fw-bold font-monospace fs-5 text-primary';
+    }
+}
+
+function navigateNext() {
+    if (currentIndex < totalQuestions - 1) {
+        renderQuestion(currentIndex + 1);
+    }
+}
+
+function navigatePrev() {
+    if (currentIndex > 0) {
+        renderQuestion(currentIndex - 1);
+    }
+}
+
+function renderNavGrid() {
+    const container = document.getElementById('navGridContainer');
+    container.innerHTML = '';
+
+    for (let i = 0; i < totalQuestions; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.onclick = () => renderQuestion(i);
+
+        let cls = 'nav-grid-btn ';
+        if (i === currentIndex) {
+            cls += 'current ';
+        }
+
+        if (markedForReview[i]) {
+            cls += 'bg-warning text-dark';
+        } else if (userAnswers[i]) {
+            cls += 'bg-success text-white';
+        } else if (i === currentIndex) {
+            cls += 'bg-primary text-white';
+        } else {
+            cls += 'bg-secondary bg-opacity-25 text-body';
+        }
+
+        btn.className = cls;
+        btn.textContent = i + 1;
+        container.appendChild(btn);
+    }
+}
+
+function openSubmitModal() {
+    let answered = 0;
+    for (let i = 0; i < totalQuestions; i++) {
+        if (userAnswers[i]) answered++;
+    }
+    document.getElementById('modalTotalQ').textContent = totalQuestions;
+    document.getElementById('modalAnsweredQ').textContent = answered;
+    document.getElementById('modalUnansweredQ').textContent = totalQuestions - answered;
+
+    const modal = new bootstrap.Modal(document.getElementById('submitConfirmModal'));
+    modal.show();
+}
+
+function executeFinalSubmit() {
+    clearInterval(questionInterval);
+    const submitBtn = document.getElementById('confirmSubmitBtn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+    }
+
+    fetch(`/api/online-test/attempt/${attemptId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.ok && data.redirect) {
+            window.location.href = data.redirect;
+        } else {
+            alert("Error submitting exam: " + (data.error || "Unknown error"));
+        }
+    })
+    .catch(err => {
+        alert("Network error submitting exam: " + err);
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+</script>
+{% endblock %}

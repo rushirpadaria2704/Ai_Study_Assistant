@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% block title %}Chat - {{ document.original_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Glassmorphism & Card Enhancements */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* Textarea Focus Styling */
+  .custom-textarea {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    resize: vertical;
+  }
+  .custom-textarea:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.15) !important;
+  }
+
+  /* Chip Hover Effects */
+  .prompt-chip {
+    transition: all 0.2s ease;
+    border-color: #e2e8f0;
+    color: #475569;
+    background: #f8fafc;
+  }
+  .prompt-chip:hover {
+    background: #6366f1;
+    color: #ffffff;
+    border-color: #6366f1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+  }
+
+  /* Vector Wave Processing Animation */
+  .wave-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 20px;
+  }
+  .wave-bar {
+    width: 3px;
+    height: 100%;
+    background-color: #6366f1;
+    border-radius: 3px;
+    animation: wave 1.2s ease-in-out infinite;
+  }
+  .wave-bar:nth-child(1) { animation-delay: 0.0s; }
+  .wave-bar:nth-child(2) { animation-delay: 0.15s; }
+  .wave-bar:nth-child(3) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(4) { animation-delay: 0.45s; }
+  .wave-bar:nth-child(5) { animation-delay: 0.6s; }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(0.2); opacity: 0.3; }
+    50% { transform: scaleY(1); opacity: 1; box-shadow: 0 0 8px #6366f1; }
+  }
+
+  /* Scrollable History Panel */
+  .history-panel {
+    max-height: 520px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .history-item {
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+  }
+  .history-item:hover {
+    border-left-color: #6366f1;
+    background-color: #f8fafc !important;
+  }
+
+  /* Smooth Fade Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header & Breadcrumb -->
+<div class="mb-4 animate-fade-in">
+    <nav aria-label="breadcrumb" class="mb-2">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none text-muted">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('document_detail', doc_id=document.id) }}" class="text-decoration-none text-muted">{{ document.original_name }}</a></li>
+            <li class="breadcrumb-item active fw-semibold" aria-current="page">Ask Questions</li>
+        </ol>
+    </nav>
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pt-1">
+        <div>
+            <h2 class="fw-bold h3 mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-chat-left-text-fill text-indigo-600" style="color: #6366f1;"></i>
+                <span>Ask About Your Notes</span>
+            </h2>
+            <p class="text-secondary small mb-0">
+                Answers are grounded strictly in <strong class="text-body">{{ document.original_name }}</strong> using local RAG context.
+            </p>
+        </div>
+        <span class="badge bg-indigo-subtle text-indigo border border-indigo-subtle rounded-pill px-3 py-2 font-monospace extra-small shadow-sm" style="background-color: #e0e7ff; color: #4338ca; border-color: #c7d2fe;">
+            <i class="bi bi-shield-check me-1"></i> Local RAG Context Active
+        </span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Main Question & Answer Column -->
+    <div class="col-lg-8">
+        <!-- Input Form Card -->
+        <div class="card border-0 glass-card rounded-4 mb-4">
+            <div class="card-body p-4">
+                <form method="POST" id="chatForm">
+                    <div class="mb-3">
+                        <label for="question" class="form-label fw-semibold d-flex justify-content-between align-items-center">
+                            <span class="text-dark">Your Question</span>
+                            <span class="text-muted fw-normal extra-small"><kbd class="bg-light text-dark border">Ctrl</kbd> + <kbd class="bg-light text-dark border">Enter</kbd> to submit</span>
+                        </label>
+                        <textarea class="form-control p-3 bg-white border-slate-200 rounded-3 custom-textarea" id="question"
+                            name="question" rows="3"
+                            placeholder="e.g., What are the key takeaways from section 2? Summarize the primary arguments."
+                            required>{{ question }}</textarea>
+                    </div>
+
+                    <!-- Prompt Suggestion Chips -->
+                    <div class="mb-4 d-flex flex-wrap align-items-center gap-2">
+                        <span class="small text-muted me-1"><i class="bi bi-lightbulb-fill text-warning"></i> Try asking:</span>
+                        <button type="button" class="btn btn-sm rounded-pill py-1 px-3 extra-small prompt-chip">Summarize key points</button>
+                        <button type="button" class="btn btn-sm rounded-pill py-1 px-3 extra-small prompt-chip">List main conclusions</button>
+                        <button type="button" class="btn btn-sm rounded-pill py-1 px-3 extra-small prompt-chip">What are the definitions?</button>
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary px-4 py-2.5 rounded-3 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" id="askBtn" style="background-color: #6366f1; border-color: #6366f1;">
+                            <i class="bi bi-send-fill"></i>
+                            <span>Get Answer</span>
+                        </button>
+                    </div>
+
+                    <!-- Processing State Indicator -->
+                    <div id="processingState" class="d-none mt-3 p-3 rounded-3 bg-light border text-center animate-fade-in">
+                        <div class="d-flex align-items-center justify-content-center gap-3">
+                            <div class="wave-loader">
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                            </div>
+                            <span class="small font-monospace text-slate-700 fw-medium">Searching embeddings & synthesizing answer...</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- AI Output Box -->
+        {% if answer %}
+        <div class="card border-0 glass-card rounded-4 overflow-hidden position-relative animate-fade-in mb-4 hover-lift">
+            <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar-icon text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 34px; height: 34px; background-color: #6366f1;">
+                        <i class="bi bi-robot fs-6"></i>
+                    </div>
+                    <h5 class="card-title h6 mb-0 fw-bold">Generated Answer</h5>
+                    <span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1 font-monospace extra-small ms-2">
+                        <i class="bi bi-cpu-fill text-indigo me-1"></i> Generated by {{ (current_model_info and current_model_info.display_name) or 'Ollama (phi3:mini)' }}
+                    </span>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 rounded-2" id="copyBtn" onclick="copyAnswerText()">
+                    <i class="bi bi-clipboard"></i>
+                    <span id="copyBtnText">Copy</span>
+                </button>
+            </div>
+            <div class="card-body p-4 answer-box bg-white">
+                <div class="answer-content text-dark lh-base" id="answerText">{{ answer | replace('\n', '<br>') | safe }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- History Panel Sidebar -->
+    <div class="col-lg-4">
+        <div class="card border-0 glass-card rounded-4">
+            <div class="card-header bg-transparent border-bottom py-3 px-4 d-flex align-items-center gap-2">
+                <i class="bi bi-clock-history text-indigo-600" style="color: #6366f1;"></i>
+                <h3 class="card-title h6 mb-0 fw-bold">Question History</h3>
+            </div>
+            <div class="card-body p-3 history-panel">
+                {% if history %}
+                <div class="history-list d-flex flex-column gap-2">
+                    {% for item in history %}
+                    <div class="history-item p-3 rounded-3 border bg-white shadow-sm">
+                        <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                            <strong class="small text-dark text-truncate-2 flex-grow-1 fw-semibold">{{ item.question }}</strong>
+                        </div>
+                        <p class="small text-secondary text-truncate-3 mb-2 lh-sm">{{ item.answer }}</p>
+                        <div class="d-flex align-items-center justify-content-between extra-small text-muted border-top pt-2 mt-2">
+                            <span><i class="bi bi-calendar3 me-1"></i>{{ item.created_at }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-chat-square-dots fs-2 d-block mb-2 text-slate-300"></i>
+                    <p class="small mb-0">No previous questions asked yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatForm = document.getElementById('chatForm');
+        const textarea = document.getElementById('question');
+        const askBtn = document.getElementById('askBtn');
+        const processingState = document.getElementById('processingState');
+
+        // Form submission animation state
+        if (chatForm) {
+            chatForm.addEventListener('submit', function () {
+                if (askBtn) {
+                    askBtn.disabled = true;
+                    askBtn.classList.add('opacity-75');
+                    askBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Analyzing...';
+                }
+                if (processingState) {
+                    processingState.classList.remove('d-none');
+                }
+            });
+        }
+
+        // Ctrl + Enter shortcut
+        if (textarea) {
+            textarea.addEventListener('keydown', function (e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    if (this.value.trim() !== '') {
+                        chatForm.requestSubmit();
+                    }
+                }
+            });
+        }
+
+        // Interactive Prompt Suggestion Chips
+        document.querySelectorAll('.prompt-chip').forEach(chip => {
+            chip.addEventListener('click', function () {
+                if (textarea) {
+                    textarea.value = this.innerText;
+                    textarea.focus();
+                }
+            });
+        });
+    });
+
+    // Copy Answer Functionality
+    function copyAnswerText() {
+        const answerContainer = document.getElementById('answerText');
+        const copyBtnText = document.getElementById('copyBtnText');
+
+        if (answerContainer) {
+            const textToCopy = answerContainer.innerText;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                if (copyBtnText) {
+                    copyBtnText.innerText = 'Copied!';
+                    setTimeout(() => {
+                        copyBtnText.innerText = 'Copy';
+                    }, 2000);
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}

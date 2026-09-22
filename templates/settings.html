@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h2 class="fw-bold mb-1">Settings</h2>
+                <p class="text-muted mb-0">
+                    Configure application behavior, models, and integrations.
+                    {% if advanced_mode %}<span class="badge bg-warning text-dark ms-2">Advanced Mode Active</span>{% endif %}
+                </p>
+            </div>
+            <form method="post">
+                <input type="hidden" name="action" value="toggle_advanced">
+                <button type="submit"
+                        class="btn btn-outline-primary rounded-3 d-inline-flex align-items-center gap-2 shadow-sm">
+                    <i class="bi bi-gear-wide-connected"></i>
+                    <span>{{ 'Disable Advanced Mode' if advanced_mode else 'Enable Advanced Mode' }}</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-8 mx-auto">
+        <div class="card p-4 mb-4 border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 px-0 pt-0 pb-3 mb-3">
+                <h4 class="mb-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-sliders text-primary"></i>
+                    General Settings
+                </h4>
+            </div>
+            <form method="post">
+                <input type="hidden" name="action" value="save_general">
+
+                <div class="mb-3">
+                    <label for="default_model" class="form-label fw-semibold">Default Model</label>
+                    <input type="text" class="form-control rounded-2" id="default_model" name="default_model"
+                           value="{{ general.default_model }}"
+                           placeholder="e.g., phi3:mini, gpt-3.5-turbo">
+                    <div class="form-text">Preferred model name for LLM requests.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="max_tokens_per_request" class="form-label fw-semibold">Max Tokens Per Request</label>
+                    <select class="form-select rounded-2" id="max_tokens_per_request" name="max_tokens_per_request">
+                        {% for val in ['256', '512', '1024', '2048', '4096', '8192'] %}
+                        <option value="{{ val }}" {% if general.max_tokens_per_request == val %}selected{% endif %}>{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Maximum output length for generation tasks.</div>
+                </div>
+
+                <div class="mb-4 form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="enable_opencv_processing"
+                           name="enable_opencv_processing"
+                           {% if general.enable_opencv_processing %}checked{% endif %}>
+                    <label class="form-check-label fw-semibold" for="enable_opencv_processing">
+                        Enable OpenCV Processing
+                    </label>
+                    <div class="form-text ms-4">Enable OpenCV-based image processing within the application's image pipeline.</div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary rounded-3 px-4 shadow-sm">
+                        <i class="bi bi-save me-1"></i> Save General Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="advanced-section-wrapper" {% if not advanced_mode %}style="display:none;"{% endif %}>
+            <div class="card p-4 mb-4 border-0 shadow-sm border-start border-4 border-warning">
+                <div class="card-header bg-transparent border-0 px-0 pt-0 pb-3 mb-3">
+                    <h4 class="mb-0 d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-lightning-charge text-warning"></i>
+                        Hidden: Custom API Integrations
+                        <span class="badge bg-warning text-dark ms-auto fs-6">Advanced Only</span>
+                    </h4>
+                    <p class="text-muted mt-2 mb-0 small">
+                        Connect third-party AI providers (Gemini, OpenAI, Anthropic, custom endpoints).
+                        Credentials are stored encrypted. Use the &ldquo;Test Connection&rdquo; button after entering details.
+                    </p>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="alert alert-info rounded-3 border-0 mb-0 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>Active provider:</strong>
+                            {% if active_provider %}
+                                <span class="fw-semibold">{{ active_provider.provider_name }}</span>
+                                <span class="text-muted">({{ provider_types[active_provider.provider_type].label }}, model: {{ active_provider.model_name }})</span>
+                            {% else %}
+                                <span class="text-muted">Local Ollama default (no custom API active)</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end d-flex align-items-center justify-content-end gap-2">
+                        <button id="verify-models-btn" type="button" class="btn btn-outline-primary rounded-3 shadow-sm">
+                            <i class="bi bi-shield-check me-1"></i> Verify Model Connections
+                        </button>
+                        <button id="add-config-btn" class="btn btn-success rounded-3 shadow-sm" data-bs-toggle="modal"
+                                data-bs-target="#configModal">
+                            <i class="bi bi-plus-lg me-1"></i> Add API Integration
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Verification Results Box -->
+                <div id="verification-results" class="mb-4"></div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Model</th>
+                                <th>Endpoint</th>
+                                <th>Key</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="config-tbody">
+                            {% for cfg in api_configs %}
+                            <tr data-id="{{ cfg.id }}">
+                                <td class="fw-semibold">{{ cfg.provider_name }}</td>
+                                <td>
+                                    <span class="badge rounded-pill text-bg-light border">{{ provider_types[cfg.provider_type].label }}</span>
+                                </td>
+                                <td class="text-muted small">{{ cfg.model_name }}</td>
+                                <td class="small text-truncate" style="max-width: 200px;" title="{{ cfg.base_url }}">
+                                    {{ cfg.base_url }}
+                                </td>
+                                <td><code class="small">{{ cfg.api_key_masked or '&mdash;' }}</code></td>
+                                <td>
+                                    {% if cfg.is_active %}
+                                        <span class="badge bg-success-subtle text-success rounded-pill">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        {% if not cfg.is_active %}
+                                        <button class="btn btn-outline-success activate-btn" data-id="{{ cfg.id }}" title="Activate">
+                                            <i class="bi bi-check2"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button class="btn btn-outline-primary edit-btn" data-id="{{ cfg.id }}" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary test-btn" data-id="{{ cfg.id }}" title="Test">
+                                            <i class="bi bi-plug"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger delete-btn" data-id="{{ cfg.id }}" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-cloud-slash fs-3 d-block mb-2"></i>
+                                    No custom API integrations. Click <strong>Add API Integration</strong> to get started.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card p-4 mb-4 border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 px-0 pt-0 pb-3 mb-3">
+                    <h5 class="mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-book text-primary"></i>
+                        Custom API Configuration Guide
+                    </h5>
+                </div>
+                <div class="small">
+                    <h6 class="fw-semibold">Supported Providers</h6>
+                    <ul class="mb-3">
+                        <li><strong>OpenAI</strong> &mdash; key format: <code>sk-...</code>, default endpoint: <code>https://api.openai.com/v1</code></li>
+                        <li><strong>Google Gemini</strong> &mdash; key format: <code>AIza...</code>, default endpoint: <code>https://generativelanguage.googleapis.com/v1beta</code></li>
+                        <li><strong>Anthropic Claude</strong> &mdash; key format: <code>sk-ant-...</code>, default endpoint: <code>https://api.anthropic.com/v1</code></li>
+                        <li><strong>Ollama (Local)</strong> &mdash; optional key, default endpoint: <code>http://localhost:11434</code></li>
+                        <li><strong>Custom / OpenAI-Compatible</strong> &mdash; any endpoint exposing <code>/chat/completions</code>.</li>
+                    </ul>
+                    <h6 class="fw-semibold">How to Add &amp; Activate</h6>
+                    <ol class="mb-0">
+                        <li>Click <strong>Add API Integration</strong>, select the provider type and enter credentials.</li>
+                        <li>Click <strong>Test Connection</strong> to verify API reachability and key validity.</li>
+                        <li>Save, then click the <span class="text-success"><i class="bi bi-check2"></i></span> Activate button to make it the active provider.</li>
+                        <li>The app will prefer the active custom provider and gracefully fall back to Ollama.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <form id="config-form">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="configModalLabel">
+                        <i class="bi bi-cloud-plus text-primary me-1"></i>
+                        <span id="modal-title-text">Add API Integration</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="cfg-id" value="">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="cfg-provider-type" class="form-label fw-semibold">Provider Type</label>
+                            <select class="form-select rounded-2" id="cfg-provider-type" name="provider_type" required>
+                                {% for key, info in provider_types.items() %}
+                                <option value="{{ key }}" data-default-url="{{ info.default_base_url }}"
+                                        data-default-model="{{ info.default_model }}"
+                                        data-optional-key="{{ '1' if info.optional_key else '0' }}">
+                                    {{ info.label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Choose the AI platform you want to connect.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="cfg-name" class="form-label fw-semibold">Display Name</label>
+                            <input type="text" class="form-control rounded-2" id="cfg-name" name="provider_name"
+                                   placeholder="e.g. My OpenAI Account" required>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label for="cfg-base-url" class="form-label fw-semibold">API Endpoint URL</label>
+                            <input type="url" class="form-control rounded-2" id="cfg-base-url" name="base_url" required>
+                            <div class="form-text" id="cfg-base-url-help">Base URL for the provider API.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="cfg-model" class="form-label fw-semibold">Model Name</label>
+                            <input type="text" class="form-control rounded-2" id="cfg-model" name="model_name" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label for="cfg-api-key" class="form-label fw-semibold">API Key</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control rounded-2" id="cfg-api-key" name="api_key"
+                                       autocomplete="off">
+                                <button class="btn btn-outline-secondary rounded-2 toggle-key-visibility" type="button"
+                                        title="Show/Hide Key">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary rounded-2 test-inline-btn" type="button">
+                                    <i class="bi bi-plug me-1"></i> Test Connection
+                                </button>
+                            </div>
+                            <div class="form-text" id="cfg-api-key-help">Stored encrypted. Leave empty only for local Ollama.</div>
+                            <div class="mt-1" id="test-result"></div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="cfg-priority" class="form-label fw-semibold">Priority</label>
+                            <input type="number" class="form-control rounded-2" id="cfg-priority" name="priority" value="0" min="0">
+                            <div class="form-text">Higher = preferred when multiple active.</div>
+                        </div>
+                        <div class="col-md-8 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="cfg-is-active"
+                                       name="is_active">
+                                <label class="form-check-label fw-semibold" for="cfg-is-active">
+                                    Set as active provider immediately after saving
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="cfg-save-btn" class="btn btn-primary rounded-3 px-4 shadow-sm">
+                        <i class="bi bi-save me-1"></i> Save Integration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

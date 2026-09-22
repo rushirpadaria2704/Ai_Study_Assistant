@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Viva voce Examiner Board{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --viva-bg-base: #f8fafc;
+        --viva-card-bg: #ffffff;
+        --viva-border: #e2e8f0;
+        --viva-text-dark: #0f172a;
+        --viva-text-muted: #64748b;
+        --viva-purple: #8b5cf6;
+        --viva-purple-light: #f5f3ff;
+    }
+
+    body {
+        background-color: var(--viva-bg-base);
+    }
+
+    .viva-card {
+        background: var(--viva-card-bg);
+        border: 1px solid var(--viva-border);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        transition: all 0.2s ease-in-out;
+    }
+
+    .viva-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+        border-color: #cbd5e1;
+    }
+
+    .viva-badge-active {
+        background-color: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.2rem 0.5rem;
+        border-radius: 9999px;
+    }
+
+    .viva-badge-completed {
+        background-color: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.2rem 0.5rem;
+        border-radius: 9999px;
+    }
+
+    .viva-btn-primary {
+        background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+        color: white;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .viva-btn-primary:hover {
+        background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+    }
+
+    .viva-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--viva-purple-light);
+        color: var(--viva-purple);
+    }
+</style>
+
+<div class="container-fluid py-4 max-w-7xl">
+    <!-- Header Banner -->
+    <div class="viva-card p-4 p-lg-5 mb-4 text-white" style="background: radial-gradient(135% 100% at 50% 0%, #1e1b4b 0%, #0f0b29 100%); position: relative; overflow: hidden; border: none;">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="d-inline-flex align-items-center gap-2 px-2.5 py-1 mb-3 rounded-pill bg-white bg-opacity-10 text-info-subtle extra-small border border-white border-opacity-10">
+                    <i class="bi bi-mic-fill"></i>
+                    <span>Real-time Voice &amp; Text Assessment</span>
+                </div>
+                <h1 class="h2 fw-bold text-white mb-2">Oral Viva voce Examiner Board</h1>
+                <p class="text-slate-300 small mb-0 col-lg-10 lh-relaxed" style="opacity: 0.85;">
+                    Simulate real-world academic oral exams. The AI examiner asks custom questions directly extracted from your lectures/notes. Talk back using your microphone or reply with text, and get instant feedback and scoring.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+                <div class="viva-icon-box mx-lg-auto" style="width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,0.08); color: #c084fc;">
+                    <i class="bi bi-mic fs-2 animate-pulse"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left: Choose Document to start Viva -->
+        <div class="col-lg-4">
+            <div class="viva-card p-4 bg-white">
+                <h2 class="h5 fw-bold text-slate-900 mb-3"><i class="bi bi-play-circle text-purple me-2"></i>Start New Viva</h2>
+                <p class="text-slate-500 extra-small mb-4">
+                    Choose one of your indexed study documents below to launch the oral examiner session.
+                </p>
+
+                {% if documents %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for doc in documents %}
+                            <div class="border rounded-3 p-3 bg-light-subtle d-flex flex-column justify-content-between">
+                                <div class="d-flex align-items-start gap-2 mb-2">
+                                    <i class="bi bi-file-earmark-pdf fs-5 text-danger flex-shrink-0"></i>
+                                    <div class="overflow-hidden">
+                                        <div class="fw-semibold text-truncate small text-slate-900" title="{{ doc.original_name }}">
+                                            {{ doc.original_name }}
+                                        </div>
+                                        <span class="text-muted extra-small d-block">
+                                            {{ doc.page_count }} pages &bull; {{ doc.word_count }} words
+                                        </span>
+                                    </div>
+                                </div>
+                                <a href="{{ url_for('viva_start', doc_id=doc.id) }}" class="btn viva-btn-primary btn-sm w-100 rounded-2 extra-small py-2 mt-1 d-flex align-items-center justify-content-center gap-1">
+                                    <i class="bi bi-mic-fill"></i> Start Oral Viva
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 border border-dashed rounded-3">
+                        <i class="bi bi-file-earmark-arrow-up display-6 text-muted mb-2"></i>
+                        <div class="small fw-semibold text-slate-500">No Documents Found</div>
+                        <p class="extra-small text-muted mb-3">Please upload notes or PDFs first.</p>
+                        <a href="{{ url_for('upload') }}" class="btn btn-outline-dark btn-sm extra-small">Upload Page</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right: Previous Viva Attempts History -->
+        <div class="col-lg-8">
+            <div class="viva-card p-4 bg-white h-100">
+                <h2 class="h5 fw-bold text-slate-900 mb-3"><i class="bi bi-clock-history text-purple me-2"></i>Viva History &amp; Grades</h2>
+                
+                {% if sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle extra-small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Document</th>
+                                    <th>Status</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in sessions %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ s.student_name or 'Anonymous Student' }}</strong>
+                                        </td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 180px;" title="{{ s.original_name }}">
+                                                {{ s.original_name }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if s.status == 'active' %}
+                                                <span class="viva-badge-active"><i class="bi bi-record-fill text-primary animate-pulse me-1"></i>Active</span>
+                                            {% else %}
+                                                <span class="viva-badge-completed"><i class="bi bi-check-circle-fill text-success me-1"></i>Completed</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if s.status == 'completed' %}
+                                                <strong class="text-slate-900">{{ s.total_score }}</strong> / {{ s.max_score }}
+                                                <span class="text-muted ms-1">({{ ((s.total_score / s.max_score) * 100)|round|int }}%)</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-muted">
+                                            {{ s.created_at }}
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-inline-flex align-items-center gap-1">
+                                                {% if s.status == 'active' %}
+                                                    <a href="{{ url_for('viva_session_page', session_id=s.id) }}" class="btn btn-outline-primary btn-xs rounded-1 px-2 py-1">
+                                                        <i class="bi bi-play-fill me-1"></i>Resume
+                                                    </a>
+                                                {% else %}
+                                                    <a href="{{ url_for('viva_review_page', session_id=s.id) }}" class="btn btn-light border btn-xs rounded-1 px-2 py-1">
+                                                        <i class="bi bi-eye-fill me-1"></i>Review
+                                                    </a>
+                                                {% endif %}
+                                                <form method="POST" action="{{ url_for('viva_delete', session_id=s.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this Viva session?');">
+                                                    <button type="submit" class="btn btn-outline-danger btn-xs rounded-1 px-2 py-1" title="Delete Viva Session">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5 border rounded-3 bg-light-subtle my-auto">
+                        <i class="bi bi-journal-check display-6 text-muted mb-2"></i>
+                        <div class="small fw-semibold text-slate-500">No Viva History Yet</div>
+                        <p class="extra-small text-muted mb-0">Select a study material on the left to start your first oral exam.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

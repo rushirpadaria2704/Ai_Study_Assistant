@@ -1,0 +1,135 @@
+Read PDF text: 6980 chars, 1305 words
+
+=== TEST 1: Prediction KB ===
+KB size: 20
+Q1: What does Prediction model in data analysis?
+  Correct: Continuous-valued functions or ordered values
+Q2: Which of the following is a typical use case of Prediction (numeric prediction)?
+  Correct: Predicting how much a customer will spend during a sale
+Q3: Classification predicts _______ whereas Prediction predicts _______.
+  Correct: categorical class labels; continuous-valued functions
+
+=== TEST 2: Content MCQs (15 questions) ===
+Generated: 15 MCQs
+Generic placeholder questions (old bug): 0
+Real content questions: 15
+
+=== TEST 3: Show all 15 MCQs ===
+
+Q1 [MEDIUM] Which best describes the term 'Prediction'?
+   >> A. ==== PAGE 4 =====
+      B. Determine the strength of predictors(age and income)
+      C. Regression analysis
+      D. Accuracy and error measures
+   Explanation: 'Prediction' is defined as: ==== PAGE 4 =====.
+
+Q2 [MEDIUM] What criterion is generally used to estimate regression coefficients?
+   >> A. Least squares — minimize sum of squared residuals
+      B. Maximum likelihood clustering
+      C. Principal component analysis
+      D. Gini impurity minimization
+   Explanation: Coefficients are estimated by the least squares criterion, minimizing the sum of squared errors.
+
+Q3 [MEDIUM] Which best describes the term 'regression trees'?
+      A. Typical applications
+      B. β and β are called as model coefficients. To create your model you should must
+   >> C. ==== PAGE 8 =====
+      D. Non-linear regression
+   Explanation: 'regression trees' is defined as: ==== PAGE 8 =====.
+
+Q4 [MEDIUM] Which best describes the term 'Example
+Age'?
+   >> A. 5 + height*10 + weight*13
+      B. Evaluating trends and sales estimates
+      C. Prediction
+      D. β is the intercept
+   Explanation: 'Example
+Age' is defined as: 5 + height*10 + weight*13.
+
+Q5 [HARD] How is R² (R-squared) computed?
+   >> A. SSR divided by SST
+      B. SSE divided by SST
+      C. SST minus SSR
+      D. SST plus SSE
+   Explanation: R² is calculated as the ratio SSR / SST (Regression Sum of Squares / Total Sum of Squares).
+
+Q6 [MEDIUM] Which best describes the term 'Major method for prediction'?
+   >> A. regression
+      B. β is the intercept( value of y when x=0)
+      C. models continuous-valued functions, i.e., predicts unknown or missing
+      D. On the basis of this data, how should we spend our advertising
+   Explanation: 'Major method for prediction' is defined as: regression.
+
+Q7 [MEDIUM] Which of the following is NOT a typical regression application?
+   >> A. Finding frequent itemsets in market baskets
+      B. Determining the strength of predictors like age and income
+      C. Forecasting trends such as sales over time
+      D. Assessing risk in financial services
+   Explanation: Frequent itemset mining is an association rule task, not a regression application.
+
+Q8 [MEDIUM] In Simple Linear Regression, what is the correct model form?
+   >> A. y = β₀ + Xβ₁
+      B. y = β₀ * Xβ₁
+      C. y = β₀ - Xβ₁
+      D. y = (β₀ + X) / β₁
+   Explanation: Simple linear regression uses y = β₀ + Xβ₁ where β₀ is the intercept and β₁ is the slope coefficient.
+
+Q9 [MEDIUM] What does R-squared (R²) indicate in regression?
+   >> A. How well the model captures variance — higher R² means a better model
+      B. The statistical significance of predictors
+      C. The total number of features in the model
+      D. The average residual magnitude
+   Explanation: R² measures the proportion of variance explained; higher values indicate a better fitting model.
+
+Q10 [MEDIUM] What does β₁ (beta-1) represent in the linear regression model?
+   >> A. The slope — change in y divided by change in X
+      B. The value of y when X equals zero
+      C. The sum of squared residuals
+      D. The coefficient of determination R²
+   Explanation: β₁ is the slope coefficient describing how much y changes per unit change in X.
+
+Q11 [MEDIUM] What is the equation of a Positive Linear Regression line?
+   >> A. Y = mX + c
+      B. Y = -mX + c
+      C. Y = mX * c
+      D. Y = (m + X) / c
+   Explanation: A positive linear regression line is written Y = mX + c with positive slope m.
+
+Q12 [MEDIUM] Which best describes the term 'Fraud detection'?
+      A. β and β are called as model coefficients. To create your model you should must
+      B. Given ad spending in a particular market, can sales be predicted?
+      C. predicts categorical class labels (discrete or nominal)
+   >> D. ==== PAGE 7 =====
+   Explanation: 'Fraud detection' is defined as: ==== PAGE 7 =====.
+
+Q13 [MEDIUM] Which best describes the term 'The company might ask you the following'?
+   >> A. • On the basis of this data, how should we spend our advertising
+      B. Typical applications
+      C. A marketing manager at a company needs to analyze a customer with
+      D. Is there a relationship between ads and sales?
+   Explanation: 'The company might ask you the following' is defined as: • On the basis of this data, how should we spend our advertising.
+
+Q14 [EASY] What type of variable does Linear Regression predict?
+   >> A. Continuous variables such as sales or temperature
+      B. Categorical labels like Yes/No
+      C. Nominal classes without order
+      D. Binary cluster assignments only
+   Explanation: Linear regression predicts continuous, quantitative response variables.
+
+Q15 [HARD] How is Sum of Squared Error (SSE) defined?
+   >> A. Σ (predicted − actual)²
+      B. Σ (average − actual)²
+      C. SST − SSR
+      D. SSR / SST
+   Explanation: SSE (Sum of Squared Errors) is the sum over all observations of (predicted minus actual) squared.
+
+=== TEST 4: Question #10 (the user-reported issue) ===
+Question #10 text: "What does β₁ (beta-1) represent in the linear regression model?"
+Is this a generic "Key Concept Review Question #10 regarding..." placeholder? -> False
+
+Question #10 options:
+   >> CORRECT A. The slope — change in y divided by change in X
+       B. The value of y when X equals zero
+       C. The sum of squared residuals
+       D. The coefficient of determination R²
+   Explanation: β₁ is the slope coefficient describing how much y changes per unit change in X.

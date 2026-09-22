@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Online Tests{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Page Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+        <div>
+            <h1 class="h4 fw-bold text-body mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-patch-check-fill text-primary"></i> Online MCQ Test Center
+            </h1>
+            <p class="text-muted extra-small font-monospace mb-0">
+                Generate 15-question AI exams grounded strictly in your uploaded study notes.
+            </p>
+        </div>
+        <div>
+            <a href="#documentSelectionSection" class="btn btn-primary font-monospace extra-small px-3 py-2 rounded-3 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm">
+                <i class="bi bi-plus-lg"></i> Create New Test
+            </a>
+        </div>
+    </div>
+
+    <!-- Select Material to Generate Test -->
+    <div class="card workbench-card rounded-4 border-0 mb-4 shadow-sm" id="documentSelectionSection">
+        <div class="card-header bg-transparent py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+            <span class="fw-bold font-monospace text-body extra-small d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-text text-primary"></i> SELECT_STUDY_MATERIAL_FOR_EXAM
+            </span>
+            <span class="badge bg-primary bg-opacity-10 text-primary border rounded-pill px-3 py-1 font-monospace extra-small">
+                RAG Grounded Generator
+            </span>
+        </div>
+        <div class="card-body p-4">
+            {% if documents %}
+            <div class="row g-3">
+                {% for doc in documents %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="p-3 rounded-3 border bg-body h-100 d-flex flex-column justify-content-between hover-shadow transition-all">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary font-monospace extra-small text-uppercase">
+                                    {{ doc.file_type }}
+                                </span>
+                                <span class="extra-small text-muted font-monospace"><i class="bi bi-file-word me-1"></i>{{ doc.word_count }} words</span>
+                            </div>
+                            <h2 class="h6 fw-bold text-body text-truncate mb-1" title="{{ doc.original_name }}">
+                                {{ doc.original_name }}
+                            </h2>
+                            <p class="text-muted extra-small font-monospace mb-3">Uploaded: {{ doc.uploaded_at[:10] }}</p>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('online_test_setup', doc_id=doc.id) }}" class="btn btn-sm btn-outline-primary font-monospace extra-small w-100 rounded-3 fw-semibold d-flex align-items-center justify-content-center gap-1">
+                                <i class="bi bi-magic me-1"></i> Generate 15 MCQ Exam
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <div class="icon-box bg-warning bg-opacity-10 text-warning mx-auto mb-3" style="width:50px; height:50px;">
+                    <i class="bi bi-cloud-arrow-up fs-3"></i>
+                </div>
+                <h3 class="h6 fw-bold text-body font-monospace mb-2">NO_DOCUMENTS_UPLOADED</h3>
+                <p class="extra-small text-muted mb-3 font-monospace">Upload study notes first so the RAG engine can generate test questions.</p>
+                <a href="{{ url_for('upload') }}" class="btn btn-sm btn-primary font-monospace extra-small px-4 rounded-3">Upload Study Notes Now</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Test Attempts History -->
+    <div class="card workbench-card rounded-4 border-0 mb-4 shadow-sm">
+        <div class="card-header bg-transparent py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+            <span class="fw-bold font-monospace text-body extra-small d-flex align-items-center gap-2">
+                <i class="bi bi-clock-history text-success"></i> RECENT_EXAM_ATTEMPTS_HISTORY
+            </span>
+            <span class="badge bg-body-tertiary text-secondary border rounded-pill px-3 py-1 font-monospace extra-small">
+                {{ attempts|length }} Total Attempts
+            </span>
+        </div>
+        <div class="card-body p-0">
+            {% if attempts %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 font-monospace extra-small">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">EXAM_TOPIC</th>
+                            <th>SCORE</th>
+                            <th>ACCURACY</th>
+                            <th>TIME_TAKEN</th>
+                            <th>DATE</th>
+                            <th class="pe-4 text-end">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in attempts %}
+                        <tr>
+                            <td class="ps-4 fw-semibold text-body">
+                                {{ att.topic }}
+                            </td>
+                            <td>
+                                <span class="fw-bold text-body">{{ att.correct_answers }} / {{ att.total_questions }}</span>
+                            </td>
+                            <td>
+                                {% if att.percentage >= 80 %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i> {{ att.percentage }}%
+                                    </span>
+                                {% elif att.percentage >= 50 %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-exclamation-circle-fill me-1"></i> {{ att.percentage }}%
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-x-circle-fill me-1"></i> {{ att.percentage }}%
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-secondary">
+                                <i class="bi bi-clock me-1"></i> {{ (att.time_taken // 60) }}m {{ (att.time_taken % 60) }}s
+                            </td>
+                            <td class="text-muted">
+                                {{ att.started_at[:16] }}
+                            </td>
+                            <td class="pe-4 text-end">
+                                <a href="{{ url_for('online_test_result_page', attempt_id=att.id) }}" class="btn btn-sm btn-outline-success font-monospace extra-small px-3 rounded-2">
+                                    <i class="bi bi-eye me-1"></i> Review Result
+                                </a>
+                                <form method="POST" action="{{ url_for('online_test_start_action', test_id=att.test_id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary font-monospace extra-small px-3 rounded-2">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Retake
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <div class="icon-box bg-secondary bg-opacity-10 text-secondary mx-auto mb-3" style="width:50px; height:50px;">
+                    <i class="bi bi-journal-x fs-3"></i>
+                </div>
+                <h3 class="h6 fw-bold text-body font-monospace mb-1">NO_EXAM_ATTEMPTS_YET</h3>
+                <p class="extra-small text-muted mb-0 font-monospace">Select an uploaded document above to generate your first 15-question MCQ test.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

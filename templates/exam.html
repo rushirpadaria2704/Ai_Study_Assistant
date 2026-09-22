@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+{% block title %}Exam Paper - {{ document.original_name }}{% endblock %}
+
+{% block content %}
+<style>
+    /* UI Custom Animations & Styling */
+    .transition-all {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hover-lift {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+    }
+    .gradient-header {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    }
+    .accent-gradient-btn {
+        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        border: none;
+    }
+    .accent-gradient-btn:hover {
+        background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+    }
+    
+    /* Dynamic Loading Overlay */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+    #loadingOverlay.active {
+        display: flex;
+        opacity: 1;
+    }
+    .pulse-glow {
+        animation: pulseGlow 2s infinite ease-in-out;
+    }
+    @keyframes pulseGlow {
+        0%, 100% { opacity: 0.6; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.05); }
+    }
+    .progress-bar-animated-custom {
+        animation: progressSimulate 15s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+    }
+    @keyframes progressSimulate {
+        0% { width: 5%; }
+        20% { width: 35%; }
+        50% { width: 65%; }
+        85% { width: 88%; }
+        100% { width: 95%; }
+    }
+</style>
+
+<!-- Fullscreen Loading Overlay -->
+<div id="loadingOverlay" class="align-items-center justify-content-center text-white text-center">
+    <div class="p-4 rounded-4 max-w-md w-100 mx-3">
+        <div class="position-relative d-inline-block mb-4">
+            <div class="spinner-border text-danger" style="width: 4.5rem; height: 4.5rem; stroke-width: 3;" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="position-absolute top-50 start-50 translate-middle text-danger">
+                <i class="bi bi-journal-code fs-3 pulse-glow"></i>
+            </div>
+        </div>
+        <h4 class="fw-bold mb-2">Generating Exam Paper</h4>
+        <p class="text-white-50 small mb-4">Analyzing document content, composing questions, and generating paper...</p>
+        
+        <!-- Animated Progress Bar -->
+        <div class="progress bg-white-10 rounded-pill overflow-hidden mb-2" style="height: 6px;">
+            <div id="loadingProgressBar" class="progress-bar bg-danger progress-bar-animated-custom" role="progressbar"></div>
+        </div>
+        <span class="text-white-50 extra-small" id="loadingStatusText">Processing sections & marking schemes...</span>
+    </div>
+</div>
+
+<!-- Breadcrumb Navigation -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none text-secondary small"><i class="bi bi-house-door me-1"></i>Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('document_detail', doc_id=document.id) }}" class="text-decoration-none text-secondary small">{{ document.original_name }}</a></li>
+        <li class="breadcrumb-item active small text-dark fw-semibold" aria-current="page">Exam Generator</li>
+    </ol>
+</nav>
+
+<!-- Configuration Control Panel -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+    <div class="card-header gradient-header text-white py-3 px-4 border-0 d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+            <div class="p-2 bg-white-10 rounded-3 border border-white-10">
+                <i class="bi bi-file-earmark-ruled-fill text-danger-subtle fs-4"></i>
+            </div>
+            <div>
+                <h1 class="h5 fw-bold mb-0 text-white">University Exam Generator</h1>
+                <p class="text-white-50 extra-small mb-0">Generates a multi-section paper with uniform <strong>5-mark questions</strong> & model solutions.</p>
+            </div>
+        </div>
+        <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill px-3 py-2 extra-small d-none d-sm-inline-flex align-items-center gap-1">
+            <i class="bi bi-clock-history"></i> Est. 1-3 mins
+        </span>
+    </div>
+
+    <div class="card-body p-4 bg-white">
+        <form method="POST" id="examForm" class="row g-3">
+            <div class="col-md-3">
+                <label for="difficulty" class="form-label small fw-semibold text-secondary">Difficulty Level</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-bar-chart-steps"></i></span>
+                    <select class="form-select bg-light border-start-0 ps-0 shadow-none" id="difficulty" name="difficulty" required>
+                        <option value="easy">Easy (Foundational)</option>
+                        <option value="medium" selected>Medium (Standard)</option>
+                        <option value="hard">Hard (Advanced Application)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="duration" class="form-label small fw-semibold text-secondary">Exam Duration</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-hourglass-split"></i></span>
+                    <select class="form-select bg-light border-start-0 ps-0 shadow-none" id="duration" name="duration" required>
+                        <option value="1 hour">1 Hour (Quiz)</option>
+                        <option value="2 hours">2 Hours (Mid-term)</option>
+                        <option value="3 hours" selected>3 Hours (Final Exam)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="totalMarks" class="form-label small fw-semibold text-secondary">Total Marks</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-award"></i></span>
+                    <select class="form-select bg-light border-start-0 ps-0 shadow-none" id="totalMarks" name="total_marks" required>
+                        <option value="50">50 Marks (10 Qs)</option>
+                        <option value="75">75 Marks (15 Qs)</option>
+                        <option value="100" selected>100 Marks (20 Qs)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn accent-gradient-btn text-white w-100 fw-medium d-flex align-items-center justify-content-center gap-2 py-2 shadow-sm rounded-3 transition-all" id="examBtn">
+                    <i class="bi bi-magic"></i>
+                    <span>Generate Paper</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Macros for Rendering Exam Components -->
+{% macro render_section(section, prefix) %}
+{% if section and section.get('questions') %}
+<div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden hover-lift">
+    <div class="card-header py-3 px-4 border-bottom d-flex align-items-center justify-content-between {% if section.type == 'mcq' %}bg-primary-subtle text-primary-emphasis{% elif section.type == 'short_answer' %}bg-warning-subtle text-warning-emphasis{% else %}bg-dark text-white{% endif %}">
+        <span class="fw-bold d-flex align-items-center gap-2">
+            <i class="bi {% if section.type == 'mcq' %}bi-list-check{% elif section.type == 'short_answer' %}bi-text-paragraph{% else %}bi-journal-text{% endif %} fs-5"></i>
+            {{ section.get('name', 'Section') }}
+        </span>
+        <span class="badge bg-white text-dark border fw-semibold shadow-sm rounded-pill px-3 py-1">{{ section.questions|length * 5 }} Marks (5 Marks Each)</span>
+    </div>
+
+    <div class="card-body p-4 bg-white">
+        {% for q in section.questions %}
+        <div class="question-block mb-4 pb-4 {% if not loop.last %}border-bottom{% endif %}">
+            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                <h2 class="h6 fw-semibold text-dark mb-0 lh-base">
+                    <span class="badge bg-light text-dark border me-2">{{ loop.index }}</span> {{ q.question }}
+                </h2>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-medium extra-small text-nowrap rounded-pill px-2.5 py-1">[5 Marks]</span>
+            </div>
+
+            <!-- MCQ Options Grid & Show Answer Toggle -->
+            {% if section.type == 'mcq' and q.options %}
+            <div class="row g-2 ms-1 my-3">
+                {% for opt in q.options %}
+                <div class="col-md-6">
+                    <div class="p-2.5 px-3 rounded-3 border bg-light-subtle d-flex align-items-center gap-2 extra-small hover-lift">
+                        <span class="badge bg-secondary-subtle text-dark me-1">
+                            {{ ['A','B','C','D'][loop.index0] if loop.index0 < 4 else loop.index }}
+                        </span>
+                        <span class="text-body fw-medium">{{ opt }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if q.answer %}
+            <div class="mt-3">
+                <button class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5 py-1 px-3 rounded-pill extra-small transition-all" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#exam-ans-{{ prefix }}-{{ section.type }}-{{ loop.index }}">
+                    <i class="bi bi-check-circle"></i> Show Answer
+                </button>
+                <div class="collapse mt-2" id="exam-ans-{{ prefix }}-{{ section.type }}-{{ loop.index }}">
+                    <div class="p-3 bg-primary-subtle text-primary-emphasis rounded-3 border border-primary-subtle extra-small shadow-sm">
+                        <strong class="d-block mb-1"><i class="bi bi-check2-circle me-1 text-success"></i> Correct Answer:</strong>
+                        <div class="fw-semibold">{{ q.answer }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Short & Long Answer Section -->
+            {% else %}
+            <div class="mt-3">
+                <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 py-1 px-3 rounded-pill extra-small transition-all" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#exam-ans-{{ prefix }}-{{ section.type }}-{{ loop.index }}">
+                    <i class="bi bi-file-text"></i> Show Model Solution
+                </button>
+                <div class="collapse mt-2" id="exam-ans-{{ prefix }}-{{ section.type }}-{{ loop.index }}">
+                    <div class="p-3 bg-light rounded-3 border extra-small text-secondary shadow-sm">
+                        <strong class="d-block text-dark mb-1.5"><i class="bi bi-check2-square me-1 text-success"></i> Model Solution:</strong>
+                        <div class="lh-relaxed">{{ q.answer | replace('\n', '<br>') | safe }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro render_exam(data, prefix='') %}
+{% if data %}
+<div class="exam-paper-container bg-white p-4 p-lg-5 rounded-4 border shadow-sm mb-4">
+    <!-- Official Test Header Banner -->
+    <div class="border-bottom pb-4 mb-4 text-center position-relative">
+        <div class="d-none d-print-block text-uppercase fw-bold text-muted small mb-1">Confidential Examination Paper</div>
+        
+        <!-- University Logo -->
+        <div class="mb-3">
+            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3PepamCL5YxUbjFellFD8f6ni28e_etNpt2VPwen8LcCGpNs2ChUC01ONdPJ9C4yayebcxDwetdItjLiKwO_-c88AVcqilSL976vVCLcaY4qzVr7ermKPFeXE5z8xzgVJ7EXy1aG2t-wZIv-eNRVvN4lMMxzRq9TJZ4x0Ny_OPsFK8HnzLF4PE-nMyLTBOHDgSqE123IJ4PMn3UG1AQeWBvPO8mGWWSUc91Kzh3Moyq77kQNVfRLlIYhydNBoHAIfIxn9cffVY44" 
+                 alt="University Logo" 
+                 class="img-fluid" 
+                 style="max-height: 75px; object-fit: contain;">
+        </div>
+
+        <h3 class="fw-bold text-dark mb-1">{{ data.get('title', 'University Examination Paper') }}</h3>
+        {% if data.get('subject') %}
+            <p class="text-primary fw-medium mb-3"><i class="bi bi-book me-1"></i>{{ data.subject }}</p>
+        {% endif %}
+
+        <div class="d-flex flex-wrap align-items-center justify-content-center gap-3 gap-md-4 mt-3 py-2 px-3 bg-light-subtle rounded-pill border d-inline-flex extra-small">
+            <div><span class="text-muted">Difficulty:</span> <strong class="text-dark">{{ data.get('difficulty', 'medium')|capitalize }}</strong></div>
+            <div class="vr"></div>
+            <div><span class="text-muted">Duration:</span> <strong class="text-dark">{{ data.get('duration', '3 Hours') }}</strong></div>
+            <div class="vr"></div>
+            <div><span class="text-muted">Max Marks:</span> <strong class="text-dark">{{ data.get('total_marks', 100) }} Marks</strong></div>
+            <div class="vr"></div>
+            <div><span class="text-muted">Generated by:</span> <strong class="text-dark"><i class="bi bi-cpu-fill text-danger me-1"></i>{{ (current_model_info and current_model_info.display_name) or 'Ollama (phi3:mini)' }}</strong></div>
+        </div>
+    </div>
+
+    <!-- Instructions Block -->
+    {% if data.get('instructions') %}
+    <div class="alert alert-warning border-0 bg-warning-subtle rounded-3 p-3 mb-4 extra-small">
+        <strong class="d-block text-warning-emphasis mb-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> Instructions to Candidates:</strong>
+        <ol class="mb-0 ps-3 lh-base text-dark">
+            <li>All questions carry equal marks (5 marks each).</li>
+            {% for instr in data.instructions %}
+            <li>{{ instr }}</li>
+            {% endfor %}
+        </ol>
+    </div>
+    {% endif %}
+
+    <!-- Raw Response Fallback -->
+    {% if data.get('raw_response') and not data.get('sections') %}
+    <div class="alert alert-danger border-0 rounded-3 small mb-4">
+        <strong>Parsing Alert:</strong> Could not structure paper automatically.
+        <pre class="mt-2 mb-0 extra-small bg-white p-2 rounded border">{{ data.raw_response }}</pre>
+    </div>
+    {% endif %}
+
+    <!-- Section Loop -->
+    {% for section in data.get('sections', []) %}
+        {% if section.get('questions') %}
+            {{ render_section(section, prefix) }}
+        {% elif section.get('raw_response') %}
+        <div class="alert alert-warning border-0 rounded-3 small mb-3">
+            <i class="bi bi-exclamation-circle me-1"></i> <strong>{{ section.get('name', 'Section') }}</strong> failed to parse correctly.
+        </div>
+        {% endif %}
+    {% endfor %}
+
+    <!-- Action Toolbar (Print / Export) -->
+    <div class="d-flex justify-content-end gap-2 pt-3 border-top d-print-none">
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 d-flex align-items-center gap-1.5 transition-all" onclick="window.print()">
+            <i class="bi bi-printer"></i> Print / Save as PDF
+        </button>
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+<!-- Newly Generated Exam -->
+{% if exam_data %}
+<div class="mb-5">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="h5 fw-bold mb-0 text-danger d-flex align-items-center gap-2">
+            <i class="bi bi-stars"></i> Newly Generated Exam Paper
+        </h2>
+    </div>
+    {{ render_exam(exam_data, 'new') }}
+</div>
+{% endif %}
+
+<!-- History Accordion -->
+{% if exams %}
+<div class="mb-4">
+    <h3 class="h6 text-uppercase text-secondary fw-bold mb-3 tracking-wide"><i class="bi bi-archive me-1"></i> Previously Created Papers</h3>
+    <div class="accordion accordion-flush shadow-sm rounded-4 overflow-hidden border" id="examAccordion">
+        {% for item in exams %}
+        <div class="accordion-item border-bottom">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed py-3 px-4 bg-white fw-semibold text-dark extra-small" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#exam{{ item.id }}">
+                    <div class="d-flex align-items-center justify-content-between w-100 me-3">
+                        <span class="d-flex align-items-center"><i class="bi bi-file-earmark-text text-danger me-2 fs-6"></i>{{ item.title }}</span>
+                        <span class="badge bg-light text-muted fw-normal extra-small border">{{ item.created_at }}</span>
+                    </div>
+                </button>
+            </h2>
+            <div id="exam{{ item.id }}" class="accordion-collapse collapse" data-bs-parent="#examAccordion">
+                <div class="accordion-body bg-light-subtle p-4">
+                    {{ render_exam(item.parsed, 'prev-' ~ item.id) }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% elif not exam_data %}
+<div class="text-center py-5 bg-white rounded-4 border shadow-sm">
+    <div class="text-secondary opacity-50 mb-3">
+        <i class="bi bi-file-earmark-ruled display-3"></i>
+    </div>
+    <h3 class="h6 fw-bold text-dark">No Exam Papers Generated Yet</h3>
+    <p class="small text-muted mb-0">Select your desired difficulty, duration, and mark configuration above to produce a test paper.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('examForm')?.addEventListener('submit', function() {
+    const btn = document.getElementById('examBtn');
+    const overlay = document.getElementById('loadingOverlay');
+    const statusText = document.getElementById('loadingStatusText');
+
+    // Disable button to prevent double submissions
+    btn.disabled = true;
+    btn.classList.add('opacity-75');
+
+    // Display overlay
+    overlay.classList.add('active');
+
+    // Cycle informative text during generation
+    const statuses = [
+        "Analyzing document structure...",
+        "Composing questions according to selected difficulty...",
+        "Structuring marking scheme & model answers...",
+        "Finalizing university exam template..."
+    ];
+    
+    let index = 0;
+    setInterval(() => {
+        index = (index + 1) % statuses.length;
+        if(statusText) {
+            statusText.style.opacity = '0';
+            setTimeout(() => {
+                statusText.textContent = statuses[index];
+                statusText.style.opacity = '1';
+            }, 200);
+        }
+    }, 3500);
+});
+</script>
+{% endblock %}

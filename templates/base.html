@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Study Assistant{% endblock %} | AI RAG Tutor</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Custom App CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+
+<body class="d-flex flex-column h-100 bg-light-subtle">
+
+    <!-- Top Modern Navigation Bar -->
+    <header class="sticky-top">
+        <nav
+            class="navbar navbar-expand-lg navbar-dark bg-primary bg-gradient shadow-sm border-bottom border-white border-opacity-10">
+            <div class="container">
+                <!-- Brand Logo: AI Spark Theme (Fixed Text) -->
+                <a class="navbar-brand d-flex align-items-center gap-2 fw-bold fs-5" href="{{ url_for('index') }}">
+                    <div class="brand-icon text-white rounded-3 p-2 d-flex align-items-center justify-content-center shadow-sm flex-shrink-0"
+                        style="width: 38px; height: 38px; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);">
+                        <i class="bi bi-cpu-fill fs-5"></i>
+                    </div>
+                    <span class="text-black">Study<span class="fw-light text-info-subtle ms-1">AI</span></span>
+                </a>
+
+                <!-- Mobile Toggle Button -->
+                <button class="navbar-toggler border-0 p-2" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Navigation Links -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto gap-lg-1 py-2 py-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link px-3 rounded-2 d-flex align-items-center gap-2 {% if request.endpoint == 'index' %}active fw-semibold bg-white bg-opacity-10{% endif %}"
+                                href="{{ url_for('index') }}">
+                                <i class="bi bi-house-door"></i>
+                                <span>Home</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-3 rounded-2 d-flex align-items-center gap-2 {% if request.endpoint == 'upload' %}active fw-semibold bg-white bg-opacity-10{% endif %}"
+                                href="{{ url_for('upload') }}">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                                <span>Upload</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-3 rounded-2 d-flex align-items-center gap-2 {% if request.endpoint == 'dashboard' %}active fw-semibold bg-white bg-opacity-10{% endif %}"
+                                href="{{ url_for('dashboard') }}">
+                                <i class="bi bi-grid-1x2"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-3 rounded-2 d-flex align-items-center gap-2 {% if request.endpoint and 'online_test' in request.endpoint %}active fw-semibold bg-white bg-opacity-10{% endif %}"
+                                href="/online-test">
+                                <i class="bi bi-patch-check-fill text-warning"></i>
+                                <span>Online Test</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-3 rounded-2 d-flex align-items-center gap-2 {% if request.endpoint and 'viva' in request.endpoint %}active fw-semibold bg-white bg-opacity-10{% endif %}"
+                                href="{{ url_for('viva_hub') }}">
+                                <i class="bi bi-mic text-info animate-pulse"></i>
+                                <span>Oral Viva</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link px-3 rounded-2 d-flex align-items-center gap-2 {% if request.endpoint == 'settings_page' %}active fw-semibold bg-white bg-opacity-10{% endif %}"
+                                href="{{ url_for('settings_page') }}">
+                                <i class="bi bi-gear"></i>
+                                <span>Settings</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-shrink-0 my-4">
+        <div class="container">
+            <!-- Flash Message Alerts -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages-container mb-4">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center gap-3 rounded-3"
+                    role="alert">
+                    <i
+                        class="bi {% if category == 'success' %}bi-check-circle-fill text-success{% elif category == 'danger' or category == 'error' %}bi-exclamation-triangle-fill text-danger{% else %}bi-info-circle-fill text-info{% endif %} fs-5"></i>
+                    <div class="flex-grow-1">{{ message }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Page Content Injection -->
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-white border-top text-secondary">
+        <div class="container text-center">
+            <span class="small">&copy; AI Study Assistant &bull; Powered by Offline RAG Architecture.</span>
+        </div>
+    </footer>
+
+    <!-- Bootstrap & Custom Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/model-status.js') }}"></script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

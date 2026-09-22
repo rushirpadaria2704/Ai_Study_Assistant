@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block title %}Interview Prep - {{ document.original_name }}{% endblock %}
+
+{% block content %}
+<!-- Glassmorphism Styling, Skeleton Shimmers, and Modern Motion FX -->
+<style>
+    :root {
+        --glass-card-bg: rgba(255, 255, 255, 0.75);
+        --glass-card-border: rgba(255, 255, 255, 0.85);
+        --amber-glow: rgba(245, 158, 11, 0.35);
+        --amber-primary: #f59e0b;
+        --amber-dark: #d97706;
+    }
+
+    [data-bs-theme="dark"] {
+        --glass-card-bg: rgba(30, 41, 59, 0.75);
+        --glass-card-border: rgba(255, 255, 255, 0.1);
+        --amber-glow: rgba(245, 158, 11, 0.25);
+    }
+
+    .workbench-card {
+        background: var(--glass-card-bg);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid var(--glass-card-border) !important;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    }
+
+    .icon-box {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    .gradient-btn-amber {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border: none;
+        color: #ffffff !important;
+        box-shadow: 0 4px 14px var(--amber-glow);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .gradient-btn-amber:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+    }
+
+    /* Skeleton Loading Keyframe Animation */
+    @keyframes skeleton-shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    .skeleton-line {
+        height: 14px;
+        border-radius: 6px;
+        background: linear-gradient(90deg, 
+            rgba(245, 158, 11, 0.08) 25%, 
+            rgba(245, 158, 11, 0.22) 37%, 
+            rgba(245, 158, 11, 0.08) 63%
+        );
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.8s infinite ease-in-out;
+    }
+
+    .skeleton-box {
+        height: 52px;
+        border-radius: 10px;
+        background: linear-gradient(90deg, 
+            rgba(245, 158, 11, 0.06) 25%, 
+            rgba(245, 158, 11, 0.18) 37%, 
+            rgba(245, 158, 11, 0.06) 63%
+        );
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.8s infinite ease-in-out;
+    }
+
+    .accordion-glass .accordion-item {
+        background: var(--glass-card-bg);
+        border: 1px solid var(--glass-card-border);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    .accordion-glass .accordion-button:not(.collapsed) {
+        background: rgba(245, 158, 11, 0.08);
+        color: var(--bs-body-color);
+        box-shadow: none;
+    }
+
+    /* Pulse Glow Animation for Loading Header */
+    @keyframes pulse-glow {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(0.98); }
+    }
+    .pulse-animation {
+        animation: pulse-glow 1.5s infinite ease-in-out;
+    }
+
+    .question-card-inner {
+        background: rgba(255, 255, 255, 0.45);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .question-card-inner:hover {
+        border-color: rgba(245, 158, 11, 0.25);
+    }
+
+    [data-bs-theme="dark"] .question-card-inner {
+        background: rgba(15, 23, 42, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 font-monospace extra-small">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none text-secondary">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('document_detail', doc_id=document.id) }}" class="text-decoration-none text-secondary">{{ document.original_name }}</a></li>
+            <li class="breadcrumb-item active text-body fw-semibold" aria-current="page">Interview Prep</li>
+        </ol>
+    </nav>
+
+    <!-- Configuration Control Panel Header -->
+    <div class="card workbench-card rounded-4 border-0 mb-4 overflow-hidden">
+        <div class="card-header bg-transparent py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-box bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 flex-shrink-0">
+                    <i class="bi bi-person-workspace fs-3"></i>
+                </div>
+                <div>
+                    <h1 class="h5 fw-bold mb-0 text-body">Technical Interview Preparation</h1>
+                    <p class="text-muted extra-small font-monospace mb-0">Synthesize tiered viva and technical interview questions directly from your notes.</p>
+                </div>
+            </div>
+            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill px-3 py-2 extra-small font-monospace d-none d-md-inline-block">
+                <i class="bi bi-layers-half me-1"></i> MULTI_TIER_VIVA_ENGINE
+            </span>
+        </div>
+
+        <div class="card-body p-4">
+            <form method="POST" id="interviewForm" class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="numPerLevel" class="form-label extra-small font-monospace text-secondary fw-semibold">QUESTION_DENSITY_PER_TIER</label>
+                    <select class="form-select bg-body border-secondary border-opacity-25 font-monospace extra-small rounded-3" id="numPerLevel" name="num_per_level" required>
+                        <option value="1">1 Question per Tier (3 Total Questions - Quick Review)</option>
+                        <option value="3" selected>3 Questions per Tier (9 Total Questions - Standard Prep)</option>
+                        <option value="5">5 Questions per Tier (15 Total Questions - Deep Drill)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn gradient-btn-amber w-100 fw-semibold font-monospace extra-small py-2 rounded-3 d-flex align-items-center justify-content-center gap-2" id="interviewBtn">
+                        <i class="bi bi-magic"></i>
+                        <span>GENERATE_INTERVIEW_SET</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Animated Loading Skeleton Container (Initially Hidden) -->
+    <div id="loadingStateContainer" class="mb-5 d-none">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h6 text-uppercase fw-bold text-warning font-monospace mb-0 tracking-wider pulse-animation">
+                <i class="bi bi-cpu-fill me-1"></i> Synthesizing Technical Interview Questions...
+            </h2>
+        </div>
+
+        <div class="card workbench-card rounded-4 border-0 overflow-hidden">
+            <div class="card-header bg-transparent py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2 extra-small text-muted font-monospace">
+                    <span class="spinner-grow spinner-grow-sm text-warning" role="status"></span>
+                    <span>Parsing document nodes, mapping tier complexities &amp; crafting model responses...</span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex flex-column gap-4">
+                    <!-- Skeleton Item 1: Foundational -->
+                    <div class="p-3 rounded-3 border border-secondary border-opacity-10">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-1 font-monospace extra-small">Basic Tier</span>
+                            <div class="skeleton-line w-50"></div>
+                        </div>
+                        <div class="skeleton-line w-85 mb-2"></div>
+                        <div class="skeleton-box w-100"></div>
+                    </div>
+                    <!-- Skeleton Item 2: Core Concepts -->
+                    <div class="p-3 rounded-3 border border-secondary border-opacity-10">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill px-2 py-1 font-monospace extra-small">Intermediate Tier</span>
+                            <div class="skeleton-line w-40"></div>
+                        </div>
+                        <div class="skeleton-line w-75 mb-2"></div>
+                        <div class="skeleton-box w-100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Macro for Rendering Tiered Question Cards -->
+    {% macro render_level(level_name, level_key, badge_bg, border_color, text_color, icon_class, questions) %}
+    {% if questions %}
+    <div class="card workbench-card rounded-4 border-0 mb-4 overflow-hidden">
+        <div class="card-header {{ badge_bg }} py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi {{ icon_class }} fs-5 {{ text_color }}"></i>
+                <span class="fw-bold {{ text_color }} font-monospace extra-small text-uppercase">{{ level_name }} Level Questions</span>
+            </div>
+            <span class="badge bg-body {{ text_color }} border shadow-sm rounded-pill px-2 py-1 font-monospace extra-small">
+                {{ questions|length }} Questions
+            </span>
+        </div>
+        <div class="card-body p-4">
+            <div class="d-flex flex-column gap-3">
+                {% for q in questions %}
+                <div class="question-card-inner rounded-3 p-3 transition-all">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="badge bg-body text-body border rounded-circle p-2 d-flex align-items-center justify-content-center extra-small font-monospace fw-bold flex-shrink-0" style="width: 30px; height: 30px;">
+                            {{ loop.index }}
+                        </span>
+                        <div class="flex-grow-1">
+                            <h2 class="h6 fw-semibold text-body mb-2 lh-base">{{ q.question }}</h2>
+
+                            <!-- Show Model Answer Toggle Button -->
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-outline-warning font-monospace d-inline-flex align-items-center gap-1 px-3 py-1 rounded-2 extra-small" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#answer-{{ level_key }}-{{ loop.index }}">
+                                    <i class="bi bi-eye-fill"></i> Reveal Candidate Answer
+                                </button>
+                            </div>
+
+                            <!-- Expandable Model Answer Container -->
+                            <div class="collapse mt-3" id="answer-{{ level_key }}-{{ loop.index }}">
+                                <div class="p-3 bg-body rounded-3 border border-secondary border-opacity-10 extra-small text-secondary position-relative">
+                                    <strong class="d-block text-body mb-1 font-monospace"><i class="bi bi-award-fill text-warning me-1"></i> Ideal Candidate Answer:</strong>
+                                    <div class="lh-relaxed text-body">{{ q.ideal_answer | replace('\n', '<br>') | safe }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endmacro %}
+
+    {% macro render_interview(data, prefix='') %}
+    {% if data %}
+    <div class="interview-set-container">
+        <div class="d-flex align-items-center justify-content-between border-bottom border-secondary border-opacity-10 pb-3 mb-4">
+            <h3 class="h5 fw-bold text-body mb-0 font-monospace">{{ data.get('title', 'Technical Viva Questions') }}</h3>
+            <span class="badge bg-body-tertiary text-secondary border rounded-pill px-3 py-1 font-monospace extra-small">
+                <i class="bi bi-cpu-fill text-warning me-1"></i> Generated by {{ (current_model_info and current_model_info.display_name) or 'Ollama (phi3:mini)' }}
+            </span>
+        </div>
+
+        <!-- Render Tiers -->
+        {{ render_level('Basic (Foundational)', prefix ~ 'basic', 'bg-success bg-opacity-10 border-success border-opacity-10', 'border-success', 'text-success', 'bi-bar-chart-line', data.get('basic', [])) }}
+        {{ render_level('Intermediate (Core Concepts)', prefix ~ 'intermediate', 'bg-warning bg-opacity-10 border-warning border-opacity-10', 'border-warning', 'text-warning-emphasis', 'bi-bar-chart-steps', data.get('intermediate', [])) }}
+        {{ render_level('Advanced (In-Depth / Viva)', prefix ~ 'advanced', 'bg-danger bg-opacity-10 border-danger border-opacity-10', 'border-danger', 'text-danger', 'bi-graph-up-arrow', data.get('advanced', [])) }}
+
+        {% if data.get('raw_response') and not data.get('basic') and not data.get('intermediate') and not data.get('advanced') %}
+        <div class="alert alert-danger border-0 rounded-3 font-monospace extra-small">
+            <strong>Parsing Alert:</strong> Could not format interview set correctly.
+            <pre class="mt-2 mb-0 extra-small bg-body p-2 rounded border border-danger border-opacity-25">{{ data.raw_response }}</pre>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% endmacro %}
+
+    <!-- Newly Generated Interview Questions Container -->
+    {% if interview_data %}
+    <div class="mb-5" id="activeInterviewWrapper">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h6 text-uppercase fw-bold text-warning font-monospace mb-0 tracking-wider">
+                <i class="bi bi-stars me-1"></i> Newly Generated Interview Set
+            </h2>
+        </div>
+        <div class="p-4 workbench-card rounded-4 border-0">
+            {{ render_interview(interview_data, 'new-') }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- History Accordion -->
+    {% if interviews %}
+    <div class="mb-4">
+        <h2 class="h6 text-uppercase fw-bold text-secondary font-monospace mb-3 tracking-wider">
+            <i class="bi bi-archive me-1 text-primary"></i> Previously Generated Sets
+        </h2>
+        <div class="accordion accordion-flush accordion-glass rounded-4 overflow-hidden border" id="interviewAccordion">
+            {% for item in interviews %}
+            <div class="accordion-item">
+                <h3 class="accordion-header">
+                    <button class="accordion-button collapsed py-3 px-4 fw-semibold text-body extra-small font-monospace" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#interview{{ item.id }}">
+                        <div class="d-flex align-items-center justify-content-between w-100 me-3">
+                            <span class="d-flex align-items-center gap-2">
+                                <i class="bi bi-person-badge text-warning"></i>{{ item.title }}
+                            </span>
+                            <span class="text-muted fw-normal extra-small"><i class="bi bi-clock me-1"></i>{{ item.created_at }}</span>
+                        </div>
+                    </button>
+                </h3>
+                <div id="interview{{ item.id }}" class="accordion-collapse collapse" data-bs-parent="#interviewAccordion">
+                    <div class="accordion-body p-4 border-top border-opacity-10">
+                        {{ render_interview(item.parsed, 'prev-' ~ item.id ~ '-') }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% elif not interview_data %}
+    <!-- Modern Empty State -->
+    <div class="card workbench-card rounded-4 border-0 p-5 text-center" id="emptyStateWrapper">
+        <div class="icon-box bg-warning bg-opacity-10 text-warning mx-auto mb-3">
+            <i class="bi bi-person-workspace fs-3"></i>
+        </div>
+        <h3 class="h6 fw-bold text-body mb-2 font-monospace">NO_INTERVIEW_SETS_CREATED_YET</h3>
+        <p class="extra-small text-muted mb-0 font-monospace" style="max-width: 440px; margin: 0 auto;">
+            Select your preferred question density per tier above, then click <strong class="text-body">GENERATE_INTERVIEW_SET</strong> to prepare for technical vivas.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Trigger Loading Animations & Skeleton State on Form Submit
+document.getElementById('interviewForm')?.addEventListener('submit', function() {
+    const btn = document.getElementById('interviewBtn');
+    const loadingState = document.getElementById('loadingStateContainer');
+    const activeInterview = document.getElementById('activeInterviewWrapper');
+    const emptyState = document.getElementById('emptyStateWrapper');
+
+    // 1. Disable submit button & update text to animated spinner
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>GENERATING...';
+
+    // 2. Hide active set / empty state
+    if (activeInterview) activeInterview.classList.add('d-none');
+    if (emptyState) emptyState.classList.add('d-none');
+
+    // 3. Reveal Skeleton Loading state with smooth scrolling
+    if (loadingState) {
+        loadingState.classList.remove('d-none');
+        loadingState.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+});
+</script>
+{% endblock %}

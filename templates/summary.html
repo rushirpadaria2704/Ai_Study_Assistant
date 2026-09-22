@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %}Summary - {{ document.original_name }}{% endblock %}
+
+{% block content %}
+<!-- Glassmorphic Styles, Animations & Layout Tweaks -->
+<style>
+    :root {
+        --glass-card-bg: rgba(255, 255, 255, 0.75);
+        --glass-card-border: rgba(255, 255, 255, 0.85);
+        --accent-info: #06b6d4;
+        --accent-purple: #8b5cf6;
+    }
+
+    [data-bs-theme="dark"] {
+        --glass-card-bg: rgba(30, 41, 59, 0.75);
+        --glass-card-border: rgba(255, 255, 255, 0.1);
+    }
+
+    .workbench-card {
+        background: var(--glass-card-bg);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid var(--glass-card-border) !important;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    }
+
+    .icon-box {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    .gradient-btn-info {
+        background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        border: none;
+        color: #fff !important;
+        box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .gradient-btn-info:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(6, 182, 212, 0.5);
+    }
+
+    /* Skeleton Loading Keyframe Animation */
+    @keyframes skeleton-shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    .skeleton-line {
+        height: 14px;
+        border-radius: 6px;
+        background: linear-gradient(90deg, 
+            rgba(6, 182, 212, 0.08) 25%, 
+            rgba(6, 182, 212, 0.2) 37%, 
+            rgba(6, 182, 212, 0.08) 63%
+        );
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.8s infinite ease-in-out;
+    }
+
+    .summary-reading-pane {
+        line-height: 1.8;
+        font-size: 0.95rem;
+    }
+
+    .accordion-glass .accordion-item {
+        background: var(--glass-card-bg);
+        border: 1px solid var(--glass-card-border);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    .accordion-glass .accordion-button:not(.collapsed) {
+        background: rgba(6, 182, 212, 0.08);
+        color: var(--bs-body-color);
+        box-shadow: none;
+    }
+
+    /* Pulse Glow Animation for Loading Icon */
+    @keyframes pulse-glow {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.95); }
+    }
+    .pulse-animation {
+        animation: pulse-glow 1.5s infinite ease-in-out;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 font-monospace extra-small">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none text-secondary">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('document_detail', doc_id=document.id) }}" class="text-decoration-none text-secondary">{{ document.original_name }}</a></li>
+            <li class="breadcrumb-item active text-body fw-semibold" aria-current="page">Summary Engine</li>
+        </ol>
+    </nav>
+
+    <!-- Page Hero Header -->
+    <div class="card workbench-card rounded-4 border-0 mb-4 overflow-hidden">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-box bg-info bg-opacity-10 text-info border border-info border-opacity-25 flex-shrink-0">
+                        <i class="bi bi-journal-text fs-3"></i>
+                    </div>
+                    <div>
+                        <h1 class="h4 fw-bold mb-1 text-body">Executive Chapter Summary</h1>
+                        <p class="text-muted extra-small font-monospace mb-0">
+                            AI-synthesized key takeaways &amp; core concepts for <strong class="text-body">{{ document.original_name }}</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <form method="POST" id="summaryForm" class="m-0">
+                    <button type="submit" class="btn gradient-btn-info fw-semibold rounded-3 px-3 py-2 d-inline-flex align-items-center gap-2 font-monospace extra-small" id="summaryBtn">
+                        <i class="bi bi-stars" id="btnIcon"></i>
+                        <span id="btnText">GENERATE_SUMMARY</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animated Loading Skeleton Container (Initially Hidden) -->
+    <div id="loadingStateContainer" class="mb-5 d-none">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h6 text-uppercase fw-bold text-info font-monospace mb-0 tracking-wider pulse-animation">
+                <i class="bi bi-cpu-fill me-1"></i> Synthesizing Executive Summary...
+            </h2>
+        </div>
+
+        <div class="card workbench-card rounded-4 border-0 overflow-hidden">
+            <div class="card-header bg-transparent py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2 extra-small text-muted font-monospace">
+                    <span class="spinner-grow spinner-grow-sm text-info" role="status"></span>
+                    <span>Processing vectors &amp; extracting key concepts...</span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex flex-column gap-3">
+                    <div class="skeleton-line w-75"></div>
+                    <div class="skeleton-line w-100"></div>
+                    <div class="skeleton-line w-85"></div>
+                    <div class="skeleton-line w-90"></div>
+                    <div class="skeleton-line w-50"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Synthesized Summary Banner -->
+    {% if summary_text %}
+    <div class="mb-5" id="activeSummaryWrapper">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h6 text-uppercase fw-bold text-secondary font-monospace mb-0 tracking-wider">
+                <i class="bi bi-sparkles me-1 text-info"></i> Latest Synthesized Summary
+            </h2>
+        </div>
+
+        <div class="card workbench-card rounded-4 border-0 overflow-hidden">
+            <div class="card-header bg-transparent py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2 extra-small text-muted font-monospace">
+                    <i class="bi bi-cpu-fill text-primary"></i>
+                    <span>Generated by <strong class="text-body">{{ (current_model_info and current_model_info.display_name) or 'Ollama (phi3:mini)' }}</strong></span>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary border-opacity-25 d-inline-flex align-items-center gap-1 rounded-2 font-monospace extra-small" id="copySummaryBtn" onclick="copySummaryText()">
+                    <i class="bi bi-clipboard"></i>
+                    <span id="copySummaryText">COPY_TEXT</span>
+                </button>
+            </div>
+            <div class="card-body p-4">
+                <div class="summary-reading-pane text-body" id="activeSummaryContent">
+                    {{ summary_text | replace('\n', '<br>') | safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Previously Generated Summaries Archive -->
+    {% if summaries %}
+    <div class="mb-4">
+        <h2 class="h6 text-uppercase fw-bold text-secondary font-monospace mb-3 tracking-wider">
+            <i class="bi bi-archive me-1 text-primary"></i> Summary History Archive
+        </h2>
+        <div class="accordion accordion-flush accordion-glass rounded-4 overflow-hidden border" id="summaryAccordion">
+            {% for s in summaries %}
+            <div class="accordion-item">
+                <h3 class="accordion-header">
+                    <button class="accordion-button {% if not loop.first or summary_text %}collapsed{% endif %} py-3 px-4 fw-semibold text-body extra-small font-monospace" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#summary{{ s.id }}">
+                        <div class="d-flex align-items-center justify-content-between w-100 me-3">
+                            <span class="d-flex align-items-center gap-2">
+                                <i class="bi bi-journal-check text-info"></i>{{ s.title }}
+                            </span>
+                            <span class="text-muted fw-normal extra-small"><i class="bi bi-clock me-1"></i>{{ s.created_at }}</span>
+                        </div>
+                    </button>
+                </h3>
+                <div id="summary{{ s.id }}" class="accordion-collapse collapse {% if loop.first and not summary_text %}show{% endif %}"
+                     data-bs-parent="#summaryAccordion">
+                    <div class="accordion-body p-4 summary-reading-pane extra-small text-body border-top border-opacity-10">
+                        {{ s.content | replace('\n', '<br>') | safe }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% elif not summary_text %}
+    <!-- Modern Empty State -->
+    <div class="card workbench-card rounded-4 border-0 p-5 text-center" id="emptyStateWrapper">
+        <div class="icon-box bg-info bg-opacity-10 text-info mx-auto mb-3">
+            <i class="bi bi-journal-x fs-3"></i>
+        </div>
+        <h3 class="h6 fw-bold text-body mb-2 font-monospace">NO_SUMMARIES_FOUND</h3>
+        <p class="extra-small text-muted mb-0 font-monospace" style="max-width: 420px; margin: 0 auto;">
+            Click <strong class="text-body">GENERATE_SUMMARY</strong> above to extract key insights, structured highlights, and chapter notes from this document.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Trigger Animations on Form Submission
+document.getElementById('summaryForm')?.addEventListener('submit', function() {
+    const btn = document.getElementById('summaryBtn');
+    const btnText = document.getElementById('btnText');
+    const loadingState = document.getElementById('loadingStateContainer');
+    const activeSummary = document.getElementById('activeSummaryWrapper');
+    const emptyState = document.getElementById('emptyStateWrapper');
+
+    // 1. Disable button & update text with spinner
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>SYNTHESIZING...';
+
+    // 2. Hide previous elements
+    if (activeSummary) activeSummary.classList.add('d-none');
+    if (emptyState) emptyState.classList.add('d-none');
+
+    // 3. Reveal Animated Loading Skeleton Box with smooth scroll
+    if (loadingState) {
+        loadingState.classList.remove('d-none');
+        loadingState.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+});
+
+// Copy Summary Functionality
+function copySummaryText() {
+    const summaryContainer = document.getElementById('activeSummaryContent');
+    const copyTextSpan = document.getElementById('copySummaryText');
+    
+    if (summaryContainer) {
+        const textToCopy = summaryContainer.innerText;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            copyTextSpan.innerText = 'COPIED!';
+            setTimeout(() => {
+                copyTextSpan.innerText = 'COPY_TEXT';
+            }, 2000);
+        });
+    }
+}
+</script>
+{% endblock %}

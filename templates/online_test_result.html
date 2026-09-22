@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block title %}Exam Results - {{ result.topic }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 font-monospace extra-small">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}" class="text-decoration-none text-secondary">Home</a></li>
+            <li class="breadcrumb-item"><a href="/online-test" class="text-decoration-none text-secondary">Online Tests</a></li>
+            <li class="breadcrumb-item active text-body fw-semibold" aria-current="page">Exam Result</li>
+        </ol>
+    </nav>
+
+    <!-- Score Header Banner -->
+    <div class="card workbench-card rounded-4 border-0 shadow-lg mb-4 overflow-hidden">
+        <div class="card-body p-4 p-md-5 text-center">
+            <span class="badge bg-primary bg-opacity-10 text-primary border rounded-pill px-3 py-1 font-monospace extra-small mb-3">
+                TEST COMPLETED • {{ result.topic }}
+            </span>
+
+            <div class="display-3 fw-bold font-monospace text-primary mb-1">
+                {{ result.percentage }}%
+            </div>
+            <div class="h5 fw-semibold font-monospace text-body mb-4">
+                Score: {{ result.score }} / {{ result.total_questions }} Correct
+            </div>
+
+            <!-- Performance Badge -->
+            <div class="mb-4">
+                {% if result.percentage >= 80 %}
+                    <span class="badge bg-success rounded-pill px-4 py-2 font-monospace fs-6 shadow-sm">
+                        🎉 Excellent Performance! (Mastery Level)
+                    </span>
+                {% elif result.percentage >= 50 %}
+                    <span class="badge bg-warning text-dark rounded-pill px-4 py-2 font-monospace fs-6 shadow-sm">
+                        👍 Good Attempt! Review Weak Areas Below
+                    </span>
+                {% else %}
+                    <span class="badge bg-danger rounded-pill px-4 py-2 font-monospace fs-6 shadow-sm">
+                        📚 Needs Revision - Study Notes &amp; Retake
+                    </span>
+                {% endif %}
+            </div>
+
+            <!-- Stats Bar Row -->
+            <div class="row g-3 justify-content-center" style="max-width: 680px; margin: 0 auto;">
+                <div class="col-4">
+                    <div class="p-3 rounded-3 border bg-success bg-opacity-10 text-success">
+                        <div class="extra-small font-monospace fw-bold">CORRECT</div>
+                        <div class="fs-4 fw-bold font-monospace">✓ {{ result.correct_answers }}</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="p-3 rounded-3 border bg-danger bg-opacity-10 text-danger">
+                        <div class="extra-small font-monospace fw-bold">WRONG</div>
+                        <div class="fs-4 fw-bold font-monospace">✗ {{ result.wrong_answers }}</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="p-3 rounded-3 border bg-secondary bg-opacity-10 text-secondary">
+                        <div class="extra-small font-monospace fw-bold">UNANSWERED</div>
+                        <div class="fs-4 fw-bold font-monospace">— {{ result.unanswered }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics & AI Analysis Row -->
+    <div class="row g-4 mb-4">
+        <!-- Visual Analytics Card -->
+        <div class="col-lg-6">
+            <div class="card workbench-card rounded-4 border-0 shadow-sm p-4 h-100">
+                <h2 class="h6 fw-bold text-body font-monospace mb-4 border-bottom pb-2">
+                    <i class="bi bi-bar-chart-line-fill me-1 text-primary"></i> Performance Analytics &amp; Timing
+                </h2>
+
+                <div class="mb-4">
+                    <div class="d-flex align-items-center justify-content-between extra-small font-monospace mb-1">
+                        <span class="text-secondary">ACCURACY_BREAKDOWN</span>
+                        <span class="fw-bold text-body">{{ result.percentage }}%</span>
+                    </div>
+                    <div class="progress" style="height: 12px; border-radius: 6px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ (result.correct_answers / result.total_questions * 100)|round }}%;"></div>
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ (result.wrong_answers / result.total_questions * 100)|round }}%;"></div>
+                        <div class="progress-bar bg-secondary bg-opacity-50" role="progressbar" style="width: {{ (result.unanswered / result.total_questions * 100)|round }}%;"></div>
+                    </div>
+                </div>
+
+                <div class="row g-3 font-monospace extra-small">
+                    <div class="col-6">
+                        <div class="p-3 rounded-3 border bg-body">
+                            <div class="text-secondary">TOTAL TIME TAKEN</div>
+                            <div class="fw-bold fs-6 text-body mt-1"><i class="bi bi-clock me-1"></i>{{ (result.time_taken // 60) }}m {{ (result.time_taken % 60) }}s</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded-3 border bg-body">
+                            <div class="text-secondary">AVG TIME / QUESTION</div>
+                            <div class="fw-bold fs-6 text-body mt-1"><i class="bi bi-stopwatch me-1"></i>{{ result.analytics.average_time_per_q }}s</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded-3 border bg-body">
+                            <div class="text-secondary">FASTEST QUESTION</div>
+                            <div class="fw-bold fs-6 text-success mt-1"><i class="bi bi-lightning-charge me-1"></i>{{ result.analytics.fastest_time }}s</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded-3 border bg-body">
+                            <div class="text-secondary">SLOWEST QUESTION</div>
+                            <div class="fw-bold fs-6 text-warning mt-1"><i class="bi bi-hourglass-split me-1"></i>{{ result.analytics.slowest_time }}s</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Performance Analysis Card -->
+        <div class="col-lg-6">
+            <div class="card workbench-card rounded-4 border-0 shadow-sm p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                    <h2 class="h6 fw-bold text-body font-monospace mb-0">
+                        <i class="bi bi-robot me-1 text-info"></i> AI Performance Analysis
+                    </h2>
+                    <span class="badge bg-info bg-opacity-10 text-info font-monospace extra-small">RAG Powered</span>
+                </div>
+
+                <div id="aiAnalysisBody" class="lh-relaxed text-body extra-small font-sans" style="white-space: pre-line;">
+                    {% if result.ai_analysis %}
+                        {{ result.ai_analysis }}
+                    {% else %}
+                        <div class="text-center py-4 text-muted font-monospace">
+                            <span class="spinner-border spinner-border-sm me-2 text-info" role="status"></span>
+                            Generating personalized AI feedback based on your study notes...
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question-by-Question Review Section -->
+    <div class="card workbench-card rounded-4 border-0 shadow-sm p-4 mb-4">
+        <h2 class="h6 fw-bold text-body font-monospace mb-4 border-bottom pb-2 d-flex align-items-center justify-content-between">
+            <span><i class="bi bi-card-checklist me-1 text-primary"></i> Detailed Question Analysis &amp; Explanations</span>
+            <span class="badge bg-body text-secondary border font-monospace extra-small">{{ result.total_questions }} Questions</span>
+        </h2>
+
+        <div class="d-flex flex-column gap-4">
+            {% for item in result.review %}
+            <div class="p-4 rounded-3 border {% if item.is_correct %}border-success border-opacity-30 bg-success bg-opacity-10{% elif item.status == 'wrong' %}border-danger border-opacity-30 bg-danger bg-opacity-10{% else %}border-secondary border-opacity-25 bg-body-tertiary{% endif %}">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <span class="fw-bold font-monospace extra-small {% if item.is_correct %}text-success{% elif item.status == 'wrong' %}text-danger{% else %}text-secondary{% endif %}">
+                        <i class="bi {% if item.is_correct %}bi-check-circle-fill{% elif item.status == 'wrong' %}bi-x-circle-fill{% else %}bi-dash-circle-fill{% endif %} me-1"></i>
+                        Question {{ item.question_index }} of {{ result.total_questions }}
+                    </span>
+                    <span class="badge {% if item.is_correct %}bg-success{% elif item.status == 'wrong' %}bg-danger{% else %}bg-secondary{% endif %} font-monospace extra-small">
+                        {{ item.status|upper }}
+                    </span>
+                </div>
+
+                <h3 class="h6 fw-bold text-body mb-3 font-sans lh-base">
+                    {{ item.question_text }}
+                </h3>
+
+                <!-- Options grid -->
+                <div class="row g-2 mb-3">
+                    {% for opt in item.options %}
+                    <div class="col-md-6">
+                        <div class="p-2 px-3 rounded-3 border extra-small font-monospace d-flex align-items-center justify-content-between
+                            {% if opt == item.correct_option %}bg-success text-white border-success fw-bold{% elif opt == item.selected_option and not item.is_correct %}bg-danger text-white border-danger{% else %}bg-body text-secondary border-secondary border-opacity-15{% endif %}">
+                            <span>{{ opt }}</span>
+                            {% if opt == item.correct_option %}
+                                <i class="bi bi-check-lg"></i>
+                            {% elif opt == item.selected_option and not item.is_correct %}
+                                <i class="bi bi-x-lg"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Selected vs Correct Details -->
+                <div class="extra-small font-monospace mb-2 text-body">
+                    <strong>Your Selected Answer:</strong>
+                    <span class="{% if item.is_correct %}text-success fw-bold{% elif item.status == 'wrong' %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                        {{ item.selected_option }}
+                    </span>
+                </div>
+
+                {% if not item.is_correct %}
+                <div class="extra-small font-monospace mb-2 text-body">
+                    <strong>Correct Answer:</strong>
+                    <span class="text-success fw-bold">{{ item.correct_option }}</span>
+                </div>
+                {% endif %}
+
+                <!-- RAG Explanation -->
+                {% if item.explanation %}
+                <div class="p-3 rounded bg-body border border-secondary border-opacity-15 extra-small text-secondary mt-2">
+                    <strong class="text-body font-monospace d-block mb-1"><i class="bi bi-info-circle text-primary me-1"></i> Answer Explanation (From Study Material):</strong>
+                    {{ item.explanation }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="d-flex align-items-center justify-content-between mb-5">
+        <a href="/online-test" class="btn btn-outline-secondary font-monospace extra-small px-4 rounded-3">
+            <i class="bi bi-arrow-left me-1"></i> Back to Online Tests
+        </a>
+        <form method="POST" action="{{ url_for('online_test_start_action', test_id=result.test_id) }}">
+            <button type="submit" class="btn gradient-btn-emerald font-monospace extra-small px-4 rounded-3 fw-bold">
+                <i class="bi bi-arrow-repeat me-1"></i> Retake Exam Now
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Poll for AI analysis if not immediately ready
+document.addEventListener('DOMContentLoaded', function() {
+    const analysisEl = document.getElementById('aiAnalysisBody');
+    if (analysisEl && analysisEl.textContent.includes('Generating personalized AI feedback')) {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            fetch(`/api/online-test/attempt/{{ result.attempt_id }}/analysis`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok && data.ai_analysis) {
+                        analysisEl.textContent = data.ai_analysis;
+                        clearInterval(interval);
+                    }
+                })
+                .catch(() => {});
+
+            if (attempts > 15) clearInterval(interval);
+        }, 2500);
+    }
+});
+</script>
+{% endblock %}

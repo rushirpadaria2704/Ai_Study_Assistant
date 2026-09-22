@@ -1,0 +1,11 @@
+# uploads/
+vector_store/
+*.db
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
