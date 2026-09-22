@@ -13,17 +13,24 @@ import config
 class RAGEngine:
     def __init__(self):
         os.makedirs(config.VECTOR_STORE_FOLDER, exist_ok=True)
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name=config.EMBEDDING_MODEL,
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": True},
-        )
+        self._embeddings = None
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=config.CHUNK_SIZE,
             chunk_overlap=config.CHUNK_OVERLAP,
             length_function=len,
         )
         self._stores = {}
+
+    @property
+    def embeddings(self):
+        if self._embeddings is None:
+            self._embeddings = HuggingFaceEmbeddings(
+                model_name=config.EMBEDDING_MODEL,
+                model_kwargs={"device": "cpu"},
+                encode_kwargs={"normalize_embeddings": True},
+            )
+        return self._embeddings
+
 
     def _store_path(self, document_id: int) -> str:
         return os.path.join(config.VECTOR_STORE_FOLDER, f"doc_{document_id}")
